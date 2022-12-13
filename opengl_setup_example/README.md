@@ -1,5 +1,12 @@
 #  OpenGL Setup Example
 
+## Overview
+
+These instructions and sample code are for setting up OpenGL on a MacOS as of MacOS Monterey and 2022.
+
+They use glbinding (instead of glew) and glfw3.
+
+## Setup Instructions
 
 Install [Homebrew](https://brew.sh/) if you don't have it already.
 There are different versions and paths they use for Intel binaries and Apple Silicon binaries.
