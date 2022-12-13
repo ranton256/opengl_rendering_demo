@@ -7,9 +7,7 @@
 
 #include <iostream>
 
-//#define GLEW_STATIC
-//#include <GL/glew.h>
-
+// CODE_SIGN_IDENTITY gets set to '-' this refuses to launch...
 
 // Defined before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
@@ -32,6 +30,13 @@ using namespace gl;
 using namespace glbinding;
 
 
+const GLchar* vertexShaderSource = "#version 330 core\n"
+"layout ( location = 0 ) in vec3 position;\n"
+"void main( )\n"
+"{\n"
+"gl_Position = vec4(position.x position.y, position.z, 1.0 );"
+"}\n"
+;
 
 int main(int argc, const char * argv[])
 {
@@ -39,11 +44,6 @@ int main(int argc, const char * argv[])
     const GLint kWindowHeight = 768;
 
     std::cout << "GL setup example\n";
-
-    
-//    for (const Version & v : aux::Meta::versions())
-//      std::cout << v << std::endl;
-//
 
     if (!glfwInit())
         return 1;
@@ -79,15 +79,6 @@ int main(int argc, const char * argv[])
     // glbinding::Binding::initialize(glfwGetProcAddress);
     glbinding::Binding::initialize();
     
-//
-//    // for newer features.
-//    glewExperimental = GL_TRUE;
-//
-//    if( glewInit() == GLEW_OK ) {
-//        std::cerr << "Failed initializing GLEW" << std::endl;
-//        return 1;
-//    }
-    
     glViewport((GLint)0, (GLint)0, (GLsizei)screenWidth, (GLsizei)screenHeight);
     
     
@@ -104,59 +95,4 @@ int main(int argc, const char * argv[])
     std::cout << "GL setup exiting cleanly\n";
     return 0;
 }
-
-
-
-// TODO: move to readme
-
-//- install Homebrew
-//- brew install glfw3
-//- brew instll glew
-// Create an xcode cli project, pick C++.
-// build setting: search for paths, header, click +, /usr/local/include
-// (or wherever they are, might be different on M1
-// for Apple Silicon (M1,M2) mac native homebrew, headers  are in /opt/homebrew/include instead.
-// add the libraries from /usr/local or wherever for glfw3 and glew
-// Intel homebrew: /usr/local/Cellar, Apple Silicon Homebrew: /opt/homebrew/Cellar
-
-
-// to do this, go to project settings, select your target, then
-// click "Build  Phases" tab, and expand "Link Binary with Libraries"
-// Click +
-
-// add openGl framework (built in)
-
-// then click + again
-// Select "Add Other..." then select "Add files..." from the drop down.
-// hit Command + shift + G
-// type the path i.e. /usr/local/lib
-// go into the glew and glfw dirctories
-
-// add the libraries from the glfw and glew directories.
-// the file will be named something like /opt/homebrew/Cellar/glew/<version>/something.dylib
-// Pick the ones that do not show as an alias.
-
-
-// Link the glew library statically (.a) file.
-// sign the .dylib file with your developer identity.
-
-// check how it is signed or not with this:
-// codesign -d -v /opt/homebrew/opt/glfw/lib/libglfw.3.dylib
-
-// find with this:
-// security find-identity -v -p codesigning
-
-// sign it like this:
-// codesign -s "Apple Development: Your Name (blablah)" <lib_path>
-
-// If you get an "already signed" error then add "-f" flag in front of the library path and re-run.
-
-// Had to switch to glbinding because glew was a pain.
-// now have to do signing of glbinding library...
-
-// And then... it had "Zero Metal services found" just like the glew error.
-// so glew was not the problem.
-// and it's just a warning, it actually worked....
-
-// okay, all worky worky.
 
