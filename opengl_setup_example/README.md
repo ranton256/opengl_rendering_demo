@@ -15,6 +15,12 @@ These release notes at https://brew.sh/2021/02/05/homebrew-3.0.0/ describe how/w
     brew install glfw3
     brew install glbinding
 
+And also glm 
+
+
+    /opt/homebrew/bin/brew install glm
+
+
 Create an xcode cli project, pick C++.
 In build settings: search for paths, header, click +, 
 Then add /usr/local/include or /opt/homebrew/include (or wherever they are)

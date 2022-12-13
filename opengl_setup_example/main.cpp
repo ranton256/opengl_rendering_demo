@@ -25,18 +25,76 @@
 #include <glbinding/gl/gl.h>
 #include <glbinding/gl/functions.h>
 
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
+#include "perspective.h"
+
+#include "shaders.h"
 
 using namespace gl;
 using namespace glbinding;
 
 
 const GLchar* vertexShaderSource = "#version 330 core\n"
-"layout ( location = 0 ) in vec3 position;\n"
+"layout ( location = 0 ) in vec4 a_position;\n"
 "void main( )\n"
 "{\n"
-"gl_Position = vec4(position.x position.y, position.z, 1.0 );"
+"gl_Position = a_position;\n"
 "}\n"
 ;
+
+/* TODO: example for projection.
+attribute vec4      a_position;
+attribute vec4      a_color;
+
+varying vec4        v_color;
+
+uniform mat4 u_proj_matrix;
+uniform mat4 u_model_matrix;
+
+void main() {
+  mat4 mvp_matrix = u_proj_matrix * u_model_matrix;
+  v_color = a_color;
+  gl_Position = mvp_matrix * a_position;
+}
+*/
+
+
+const GLchar* fragmentShaderSource = "#version 330 core\n"
+"out vec3 color;\n"
+"void main(){\n"
+"  color = vec3(1,0,0);\n"
+"}\n"
+;
+
+//
+//const char *fragmentShaderSource =
+//    //"#version 100\n"  // OpenGL ES 2.0
+//    "#version 120\n"  // OpenGL 2.1
+//    "void main(void) {        "
+//    "  gl_FragColor[0] = 0.0; "
+//    "  gl_FragColor[1] = 0.0; "
+//    "  gl_FragColor[2] = 1.0; "
+//    "}";
+//
+
+/* vertex shader for perspctive matrix.
+attribute vec4      a_position;
+attribute vec4      a_color;
+
+varying vec4        v_color;
+
+uniform mat4 u_proj_matrix;
+uniform mat4 u_model_matrix;
+
+void main() {
+  mat4 mvp_matrix = u_proj_matrix * u_model_matrix;
+  v_color = a_color;
+  gl_Position = mvp_matrix * a_position;
+}
+ */
+
 
 int main(int argc, const char * argv[])
 {
@@ -75,15 +133,42 @@ int main(int argc, const char * argv[])
     glfwMakeContextCurrent(window);
     
     // Assume context creation using GLFW
-    
-    // glbinding::Binding::initialize(glfwGetProcAddress);
     glbinding::Binding::initialize();
     
     glViewport((GLint)0, (GLint)0, (GLsizei)screenWidth, (GLsizei)screenHeight);
     
-    
     // glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
     glClearColor((GLfloat)0.5f, (GLfloat)0.05f, (GLfloat)0.5f, (GLfloat)1.0f);
+    
+    // TODO: not sure we want these.
+//    glMatrixMode( GL_PROJECTION );
+//    glLoadIdentity( );
+
+    const float fovyInDegrees = 60.0f;
+    const float aspectRatio = 16.0f / 10.0f; // 4.0/3.0;
+    const float znear = 0.001f;
+    const float zfar = 1000.0;
+
+    glm::mat4 projection = glm::perspective(
+      // FOV & aspect
+      fovyInDegrees, aspectRatio, znear, zfar);
+
+    
+    
+//    // If you're using the now deprecated matrix stacks
+//    glMatrixMode(GL_PROJECTION);
+//    glLoadMatrixf(glm::value_ptr(projection));
+
+    // TODO:
+//    // if you're using the new shader based pipelines
+//    GLint projectionUniformLocation = ...;
+//    glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE,
+//      glm::value_ptr(projection));
+    
+    GLuint program;
+    if(!InitShader(program, vertexShaderSource, fragmentShaderSource)) {
+        std::cerr << "Could not initialize shaders" << std::endl;
+    }
     
     while( !glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
