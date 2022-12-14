@@ -12,92 +12,31 @@
 // Defined before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
 
-// This has to come first before glfw3.h it seems.
-#include <glbinding/gl/gl.h>
+// Include GLEW
+#include <GL/glew.h>
 
-// define this to prevent the non glbinding gl.h from being included
-// without this get an ambiguious glViewport() error.
-#define __gl_h_
-
+// Include GLFW
 #include <GLFW/glfw3.h>
-
-#include <glbinding/Binding.h>
-#include <glbinding/gl/gl.h>
-#include <glbinding/gl/functions.h>
+//
+//#include <glbinding/Binding.h>
+//#include <glbinding/gl/gl.h>
+//#include <glbinding/gl/functions.h>
 
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
-#include "perspective.h"
 
+#include "perspective.h"
 #include "shaders.h"
 
-using namespace gl;
-using namespace glbinding;
+
+const char* kVertexShaderPath = "vertex_shader.glsl";
+const char* kFragmentShaderPath = "fragment_shader.glsl";
 
 
-const GLchar* vertexShaderSource = "#version 330 core\n"
-"layout ( location = 0 ) in vec4 a_position;\n"
-"void main( )\n"
-"{\n"
-"gl_Position = a_position;\n"
-"}\n"
-;
-
-/* TODO: example for projection.
-attribute vec4      a_position;
-attribute vec4      a_color;
-
-varying vec4        v_color;
-
-uniform mat4 u_proj_matrix;
-uniform mat4 u_model_matrix;
-
-void main() {
-  mat4 mvp_matrix = u_proj_matrix * u_model_matrix;
-  v_color = a_color;
-  gl_Position = mvp_matrix * a_position;
-}
-*/
-
-
-const GLchar* fragmentShaderSource = "#version 330 core\n"
-"out vec3 color;\n"
-"void main(){\n"
-"  color = vec3(1,0,0);\n"
-"}\n"
-;
-
-//
-//const char *fragmentShaderSource =
-//    //"#version 100\n"  // OpenGL ES 2.0
-//    "#version 120\n"  // OpenGL 2.1
-//    "void main(void) {        "
-//    "  gl_FragColor[0] = 0.0; "
-//    "  gl_FragColor[1] = 0.0; "
-//    "  gl_FragColor[2] = 1.0; "
-//    "}";
-//
-
-/* vertex shader for perspctive matrix.
-attribute vec4      a_position;
-attribute vec4      a_color;
-
-varying vec4        v_color;
-
-uniform mat4 u_proj_matrix;
-uniform mat4 u_model_matrix;
-
-void main() {
-  mat4 mvp_matrix = u_proj_matrix * u_model_matrix;
-  v_color = a_color;
-  gl_Position = mvp_matrix * a_position;
-}
- */
-
-
-int main(int argc, const char * argv[])
+int main(int argc, const char** argv)
 {
+    
     const GLint  kWindowWidth = 1024;
     const GLint kWindowHeight = 768;
 
@@ -116,7 +55,7 @@ int main(int argc, const char * argv[])
     glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     
     // Disallow resizing.
-    glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE);
     
     GLFWwindow *window = glfwCreateWindow(kWindowWidth, kWindowHeight, "OpenGL Setup Example", nullptr, nullptr);
     
@@ -126,52 +65,110 @@ int main(int argc, const char * argv[])
     
     if( window == nullptr ) {
         std::cerr << "Failed creating window with GLFW" << std::endl;
+        getchar(); // wait on keypress
         glfwTerminate();
         return 1;
     }
     
     glfwMakeContextCurrent(window);
     
-    // Assume context creation using GLFW
-    glbinding::Binding::initialize();
-    
-    glViewport((GLint)0, (GLint)0, (GLsizei)screenWidth, (GLsizei)screenHeight);
-    
-    // glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
-    glClearColor((GLfloat)0.5f, (GLfloat)0.05f, (GLfloat)0.5f, (GLfloat)1.0f);
-    
-    // TODO: not sure we want these.
-//    glMatrixMode( GL_PROJECTION );
-//    glLoadIdentity( );
+    glewExperimental = true; // Needed for core profile
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        getchar();
+        glfwTerminate();
+        return -1;
+    }
 
-    const float fovyInDegrees = 60.0f;
-    const float aspectRatio = 16.0f / 10.0f; // 4.0/3.0;
-    const float znear = 0.001f;
-    const float zfar = 1000.0;
+    // Ensure we can capture the escape key being pressed below
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    glm::mat4 projection = glm::perspective(
-      // FOV & aspect
-      fovyInDegrees, aspectRatio, znear, zfar);
-
+    glCullFace( GL_BACK );
+    glFrontFace( GL_CCW );
+    glEnable( GL_CULL_FACE );
     
     
-//    // If you're using the now deprecated matrix stacks
-//    glMatrixMode(GL_PROJECTION);
-//    glLoadMatrixf(glm::value_ptr(projection));
+    // clear to light gray
+    glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
 
-    // TODO:
-//    // if you're using the new shader based pipelines
-//    GLint projectionUniformLocation = ...;
-//    glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE,
-//      glm::value_ptr(projection));
-    
     GLuint program;
-    if(!InitShader(program, vertexShaderSource, fragmentShaderSource)) {
+    if(!InitShader(program, kVertexShaderPath, kFragmentShaderPath)) {
         std::cerr << "Could not initialize shaders" << std::endl;
+        return 1;
+    }
+
+    const float fovyInDegrees = 45.0f;
+    const float aspectRatio = (float) screenWidth / (float)screenHeight;
+    const float znear = 0.001f;
+    const float zfar = 100.0f;
+
+    glm::mat4 Projection = glm::perspective(glm::radians(fovyInDegrees), aspectRatio, znear, zfar);
+    
+    glm::mat4 View = glm::lookAt(
+        glm::vec3(0.0f, 0.0f, 3.0f), // position
+        glm::vec3(0.0f, 0.0f, 0.0f), // target
+        glm::vec3(0.0f, 1.0f, 0.0f) //  up vector
+        );
+
+    glm::mat4 Model = glm::mat4(1.0f);
+    Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+    
+    glm::mat4 mvp = Projection * View * Model;
+    
+    GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
+    
+    GLint triColorLocation = glGetUniformLocation(program, "tri_color");
+    if (triColorLocation == -1) {
+        std::cerr << "Could not bind attribute frag_color" << std::endl;
+    }
+
+    GLint aPositionLocation = glGetAttribLocation(program, "a_position");
+    if (aPositionLocation == -1) {
+        std::cerr << "Could not bind attribute a_position" << std::endl;
     }
     
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+    
+    static const GLfloat g_vertex_buffer_data[] = {
+       -1.0f, -1.0f, 0.0f,
+       1.0f, -1.0f, 0.0f,
+       0.0f,  1.0f, 0.0f,
+    };
+    
+    GLuint vertexbuffer;
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    
+    
+    
     while( !glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        
+        glClear( GL_COLOR_BUFFER_BIT );
+        
+        glUseProgram(program);
+        
+        glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
+
+        glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+        
+        glEnableVertexAttribArray(aPositionLocation);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+           0,
+           3,
+           GL_FLOAT,
+           GL_FALSE,
+           0,
+           (void*)0
+        );
+        
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDisableVertexAttribArray(0);
+        
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -180,4 +177,3 @@ int main(int argc, const char * argv[])
     std::cout << "GL setup exiting cleanly\n";
     return 0;
 }
-

@@ -4,7 +4,7 @@
 
 These instructions and sample code are for setting up OpenGL on a MacOS as of MacOS Monterey and 2022.
 
-They use glbinding (instead of glew) and glfw3.
+They use glew and glfw3 and also glm.
 
 ## Setup Instructions
 
@@ -13,10 +13,9 @@ There are different versions and paths they use for Intel binaries and Apple Sil
 These release notes at https://brew.sh/2021/02/05/homebrew-3.0.0/ describe how/why for the two paths.
 
     brew install glfw3
-    brew install glbinding
+    brew install glew
 
 And also glm 
-
 
     /opt/homebrew/bin/brew install glm
 
@@ -42,7 +41,7 @@ Select "Add Other..."
 Then select "Add files..." from the drop down.
 Hit Command + shift + G
 Type the path i.e. /usr/local/lib
-Go into the glbinding and glfw dirctories
+Go into the glew and glfw and glm directories 
 
 Add the libraries files
 The files will be named something like /opt/homebrew/Cellar/glfw/<version>/something.dylib

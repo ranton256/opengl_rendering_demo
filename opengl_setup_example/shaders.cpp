@@ -9,12 +9,14 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <sstream>
 
 
 using namespace std;
-using namespace gl;
+// using namespace gl;
 
-static void logShaderError(gl::GLuint vs) {
+static void logShaderError(GLuint vs) {
     GLint maxLength = 0;
     glGetShaderiv(vs, GL_INFO_LOG_LENGTH, &maxLength);
     
@@ -26,12 +28,42 @@ static void logShaderError(gl::GLuint vs) {
     }
 }
 
-bool InitShader(GLuint& outProgram, const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource)
+static std::string LoadShaderFile(const char* shaderPath)
 {
-    GLboolean compile_ok = GL_FALSE, link_ok = GL_FALSE;
+    std::string shaderSource;
+    std::ifstream shaderFileStream(shaderPath, std::ios::in);
+    if(!shaderFileStream.is_open()){
+        cerr << "error opening shader source file: " << shaderPath << endl;
+        return "";
+    }
+    // TODO: handle exceptions.
+    std::stringstream sstr;
+    sstr << shaderFileStream.rdbuf();
+    shaderSource = sstr.str();
+    shaderFileStream.close();
+    
+    
+    return shaderSource;
+}
 
+
+
+bool InitShader(GLuint& outProgram, const char* vertexShaderPath, const char* fragmentShaderPath)
+
+                //, const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource)
+{
+    string vertexShaderSource = LoadShaderFile(vertexShaderPath);
+    string fragmentShaderSource = LoadShaderFile(fragmentShaderPath);
+    
+    if(vertexShaderSource.empty() || fragmentShaderSource.empty())  {
+        return false;
+    }
+    
+    GLint compile_ok = GL_FALSE, link_ok = GL_FALSE;
+
+    const char* vsPtr = vertexShaderSource.c_str();
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vs, 1, &vertexShaderSource, NULL);
+    glShaderSource(vs, 1, &vsPtr, NULL);
     glCompileShader(vs);
     glGetShaderiv(vs, GL_COMPILE_STATUS, &compile_ok);
     if (!compile_ok) {
@@ -45,12 +77,13 @@ bool InitShader(GLuint& outProgram, const GLchar* vertexShaderSource, const GLch
     
     GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
     
-    glShaderSource(fs, 1, &fragmentShaderSource, NULL);
+    const char* fsPtr = fragmentShaderSource.c_str();
+    glShaderSource(fs, 1, &fsPtr, NULL);
     glCompileShader(fs);
     glGetShaderiv(fs, GL_COMPILE_STATUS, &compile_ok);
     if (!compile_ok) {
         cerr << "Error in fragment shader" << endl;
-        logShaderError(vs);
+        logShaderError(fs);
         
         glDeleteShader(vs);
         glDeleteShader(fs);

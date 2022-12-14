@@ -8,8 +8,10 @@
 #ifndef shaders_hpp
 #define shaders_hpp
 
-#include <glbinding/gl/gl.h>
+//#include <glbinding/gl/gl.h>
+#include <GL/glew.h>
 
-bool InitShader(gl::GLuint& outProgram, const gl::GLchar* vertexShaderSource, const gl::GLchar* fragmentShaderSource);
+
+bool InitShader(GLuint& outProgram, const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource);
 
 #endif /* shaders_hpp */
