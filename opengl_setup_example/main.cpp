@@ -12,31 +12,18 @@
 // Defined before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
 
-// Include GLEW
 #include <GL/glew.h>
-
-// Include GLFW
 #include <GLFW/glfw3.h>
-//
-//#include <glbinding/Binding.h>
-//#include <glbinding/gl/gl.h>
-//#include <glbinding/gl/functions.h>
-
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
-
-#include "perspective.h"
 #include "shaders.h"
-
 
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
 
-
 int main(int argc, const char** argv)
 {
-    
     const GLint  kWindowWidth = 1024;
     const GLint kWindowHeight = 768;
 
@@ -45,7 +32,6 @@ int main(int argc, const char** argv)
     if (!glfwInit())
         return 1;
 
-    // Ask for version 3.3
     glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
     
@@ -55,7 +41,7 @@ int main(int argc, const char** argv)
     glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     
     // Disallow resizing.
-    // glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE);
     
     GLFWwindow *window = glfwCreateWindow(kWindowWidth, kWindowHeight, "OpenGL Setup Example", nullptr, nullptr);
     
@@ -88,7 +74,6 @@ int main(int argc, const char** argv)
     glEnable( GL_CULL_FACE );
     
     
-    // clear to light gray
     glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
 
     GLuint program;

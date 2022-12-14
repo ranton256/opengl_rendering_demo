@@ -49,8 +49,6 @@ static std::string LoadShaderFile(const char* shaderPath)
 
 
 bool InitShader(GLuint& outProgram, const char* vertexShaderPath, const char* fragmentShaderPath)
-
-                //, const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource)
 {
     string vertexShaderSource = LoadShaderFile(vertexShaderPath);
     string fragmentShaderSource = LoadShaderFile(fragmentShaderPath);
@@ -90,7 +88,6 @@ bool InitShader(GLuint& outProgram, const char* vertexShaderPath, const char* fr
     
         return false;
     }
-
 
     outProgram = glCreateProgram();
     glAttachShader(outProgram, vs);

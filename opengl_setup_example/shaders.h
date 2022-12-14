@@ -8,9 +8,7 @@
 #ifndef shaders_hpp
 #define shaders_hpp
 
-//#include <glbinding/gl/gl.h>
 #include <GL/glew.h>
-
 
 bool InitShader(GLuint& outProgram, const GLchar* vertexShaderSource, const GLchar* fragmentShaderSource);
 
