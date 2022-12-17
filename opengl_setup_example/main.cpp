@@ -122,21 +122,36 @@ int main(int argc, const char** argv)
        0.0f,  1.0f, 0.0f,
     };
     
-    GLuint vertexbuffer;
+    GLuint vao, vertexbuffer;
+    glGenVertexArrays(1, &vao);
+    
     glGenBuffers(1, &vertexbuffer);
+    
+    glBindVertexArray(vao);
+    
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
     
     
+    float angle = 0.0f;
+    const float kRotSpeed = 0.01;
     
     while( !glfwWindowShouldClose(window)) {
         
         glClear( GL_COLOR_BUFFER_BIT );
+        glClear (GL_DEPTH_BUFFER_BIT );
         
         glUseProgram(program);
         
         glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
 
+        
+        glm::mat4 Model = glm::mat4(1.0f);
+        Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+        Model = glm::rotate(Model, angle, glm::vec3(0, 0.2, 1));
+        
+        glm::mat4 mvp = Projection * View * Model;
+        
         glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         
         glEnableVertexAttribArray(aPositionLocation);
@@ -156,6 +171,8 @@ int main(int argc, const char** argv)
         
         glfwSwapBuffers(window);
         glfwPollEvents();
+        
+        angle += kRotSpeed;
     }
     
     glfwTerminate();
