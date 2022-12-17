@@ -22,6 +22,47 @@
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
 
+
+static const GLfloat cube_vertex_data[] = {
+    -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f
+};
+
+
 int main(int argc, const char** argv)
 {
     const GLint  kWindowWidth = 1024;
@@ -122,19 +163,26 @@ int main(int argc, const char** argv)
        0.0f,  1.0f, 0.0f,
     };
     
-    GLuint vao, vertexbuffer;
+    GLuint vao, vertexbuffer, cubeVertexBuffer;
     glGenVertexArrays(1, &vao);
     
     glGenBuffers(1, &vertexbuffer);
+    glGenBuffers(1, &cubeVertexBuffer);
     
     glBindVertexArray(vao);
     
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
     
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
     
-    float angle = 0.0f;
-    const float kRotSpeed = 0.01;
+    
+    
+    float triAngle = 0.0f;
+    float cubeAngle = 0.0f;
+    const float kTriRotSpeed = 0.02;
+    const float kCubeRotSpeed = 0.03;
     
     while( !glfwWindowShouldClose(window)) {
         
@@ -146,36 +194,75 @@ int main(int argc, const char** argv)
         glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
 
         
-        glm::mat4 Model = glm::mat4(1.0f);
-        Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
-        Model = glm::rotate(Model, angle, glm::vec3(0, 0.2, 1));
+       
         
-        glm::mat4 mvp = Projection * View * Model;
-        
-        glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         
         glEnableVertexAttribArray(aPositionLocation);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(
-           0,
-           3,
-           GL_FLOAT,
-           GL_FALSE,
-           0,
-           (void*)0
-        );
         
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        if (1) { // Triangle
+            
+            glm::mat4 Model = glm::mat4(1.0f);
+            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
+            
+            glm::mat4 mvp = Projection * View * Model;
+            
+            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glVertexAttribPointer(
+               0,
+               3,
+               GL_FLOAT,
+               GL_FALSE,
+               0,
+               (void*)0
+            );
+            
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            
+            triAngle += kTriRotSpeed;
+        }
+        if(1){ // Cube
+            
+            glm::mat4 Model = glm::mat4(1.0f);
+            Model = glm::translate(Model, glm::vec3(-2.5, 0, -4));
+            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
+            
+            glm::mat4 mvp = Projection * View * Model;
+            
+            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
+            glVertexAttribPointer(
+               0,
+               3,
+               GL_FLOAT,
+               GL_FALSE,
+               0,
+               (void*)0
+            );
+            
+            // cube is 12 triangles, 2 each for 6 sides
+            glDrawArrays(GL_TRIANGLES, 0, 12*3);
+            
+            cubeAngle += kCubeRotSpeed;
+        }
+        
+        
         glDisableVertexAttribArray(0);
         
         
         glfwSwapBuffers(window);
         glfwPollEvents();
         
-        angle += kRotSpeed;
+        
     }
     
     glfwTerminate();
     std::cout << "GL setup exiting cleanly\n";
     return 0;
 }
+
