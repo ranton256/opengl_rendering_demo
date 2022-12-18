@@ -16,6 +16,7 @@
 		56664FBF294FAB3C00F138EA /* dbgutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FBD294FAB3C00F138EA /* dbgutils.cpp */; };
 		56664FC3294FBD0A00F138EA /* pngreader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FC2294FBD0A00F138EA /* pngreader.cpp */; };
 		56664FC5294FBE3A00F138EA /* libpng16.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 56664FC4294FBE3A00F138EA /* libpng16.a */; };
+		56664FCA294FC52900F138EA /* sphere.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FC8294FC52900F138EA /* sphere.cpp */; };
 		56E9333D29498ED1002A3B33 /* libGLEW.2.2.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 56E9333C29498ED1002A3B33 /* libGLEW.2.2.0.dylib */; };
 		56E9333E29498FAF002A3B33 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56BBA59C2947C3CF005F8915 /* OpenGL.framework */; };
 		56E933422949907A002A3B33 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56E9333F2949907A002A3B33 /* main.cpp */; };
@@ -54,7 +55,10 @@
 		56664FC1294FBD0900F138EA /* pngreader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngreader.h; sourceTree = "<group>"; };
 		56664FC2294FBD0A00F138EA /* pngreader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pngreader.cpp; sourceTree = "<group>"; };
 		56664FC4294FBE3A00F138EA /* libpng16.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng16.a; path = ../../../opt/homebrew/Cellar/libpng/1.6.39/lib/libpng16.a; sourceTree = "<group>"; };
-		56664FC7294FC01D00F138EA /* IMGP5546_seamless.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = IMGP5546_seamless.png; path = opengl_setup_example/textures/IMGP5546_seamless.png; sourceTree = "<group>"; };
+		56664FC8294FC52900F138EA /* sphere.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sphere.cpp; sourceTree = "<group>"; };
+		56664FC9294FC52900F138EA /* sphere.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sphere.h; sourceTree = "<group>"; };
+		56664FCB294FC64E00F138EA /* rocky.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = rocky.png; path = opengl_setup_example/textures/rocky.png; sourceTree = "<group>"; };
+		56664FCC294FC78600F138EA /* mars.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = mars.png; path = opengl_setup_example/textures/mars.png; sourceTree = "<group>"; };
 		56BBA5912947C0F6005F8915 /* opengl_setup_example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = opengl_setup_example; sourceTree = BUILT_PRODUCTS_DIR; };
 		56BBA59C2947C3CF005F8915 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		56BBA59F2947C418005F8915 /* libglfw.3.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.3.dylib; path = ../../../opt/homebrew/Cellar/glfw/3.3.8/lib/libglfw.3.3.dylib; sourceTree = "<group>"; };
@@ -84,7 +88,8 @@
 		56664FC6294FC00300F138EA /* textures */ = {
 			isa = PBXGroup;
 			children = (
-				56664FC7294FC01D00F138EA /* IMGP5546_seamless.png */,
+				56664FCC294FC78600F138EA /* mars.png */,
+				56664FCB294FC64E00F138EA /* rocky.png */,
 			);
 			name = textures;
 			sourceTree = "<group>";
@@ -125,6 +130,8 @@
 				56664FB3294FAAE600F138EA /* vector3.cpp */,
 				56664FB4294FAAE600F138EA /* vector3.h */,
 				56E9333F2949907A002A3B33 /* main.cpp */,
+				56664FC8294FC52900F138EA /* sphere.cpp */,
+				56664FC9294FC52900F138EA /* sphere.h */,
 				56E933402949907A002A3B33 /* shaders.cpp */,
 				56E933412949907A002A3B33 /* shaders.h */,
 				56664FAB294F730100F138EA /* image_buffer.cpp */,
@@ -217,6 +224,7 @@
 				56664FB7294FAAE600F138EA /* vector3.cpp in Sources */,
 				56E933432949907A002A3B33 /* shaders.cpp in Sources */,
 				56664FBF294FAB3C00F138EA /* dbgutils.cpp in Sources */,
+				56664FCA294FC52900F138EA /* sphere.cpp in Sources */,
 				56664FBC294FAB1E00F138EA /* matrix.cpp in Sources */,
 				56664FB1294F93AA00F138EA /* proc_textures.cpp in Sources */,
 				56E933422949907A002A3B33 /* main.cpp in Sources */,

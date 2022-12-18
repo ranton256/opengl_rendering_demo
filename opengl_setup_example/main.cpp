@@ -6,6 +6,8 @@
 //
 
 #include <iostream>
+#include <vector>
+
 
 // CODE_SIGN_IDENTITY gets set to '-' this refuses to launch...
 
@@ -20,6 +22,8 @@
 #include "shaders.h"
 #include "proc_textures.h"
 #include "pngreader.h"
+#include "sphere.h"
+#include "mathutil.h"
 
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
@@ -326,11 +330,39 @@ int main(int argc, const char** argv)
     glBufferData(GL_ARRAY_BUFFER, sizeof(gTriangleUVBufferData), gTriangleUVBufferData, GL_STATIC_DRAW);
     
     
+    std::vector<float> sphereVertices, sphereNormals, sphereUVData;
+    std::vector<int> sphereIndices;
+    GenerateSphere(1.5, 10, 12, sphereVertices, sphereNormals, sphereUVData, sphereIndices);
+    
+    GLuint sphereVertexBuffer;
+    glGenBuffers(1, &sphereVertexBuffer);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphereVertices.size() * sizeof(float), sphereVertices.data(), GL_STATIC_DRAW);
+    
+    GLuint sphereUVBuffer;
+    glGenBuffers(1, &sphereUVBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sphereUVBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphereUVData.size() * sizeof(float), sphereUVData.data(), GL_STATIC_DRAW);
+    
+    GLuint sphereIndexBuffer;
+    glGenBuffers(1, &sphereIndexBuffer);
+    assert(sizeof(GLuint) == sizeof(int)); // TODO:
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereIndices.size() * sizeof(int), sphereIndices.data(), GL_STATIC_DRAW);
+    
+    
+    RGBImageBuffer *marsTextureImage = LoadImageBufferFromPNG("textures/mars.png");
+    assert(marsTextureImage);
+    GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
+    
+    
     float triAngle = 0.0f;
     float cubeAngle = 0.0f;
+    float sphereAngle = 0.0f;
     const float kTriRotSpeed = 0.02;
     const float kCubeRotSpeed = 0.03;
-    
+    const float kSphereRotSpeed = 0.01;
     
     std::cout  << "starting main loop" << std::endl;
     while( !glfwWindowShouldClose(window)) {
@@ -445,7 +477,49 @@ int main(int argc, const char** argv)
             
             // cubeAngle += kCubeRotSpeed;
         }
-        
+        if(1)
+        { // Sphere
+            
+            glm::mat4 Model = glm::mat4(1.0f);
+            Model = glm::translate(Model, glm::vec3(0, 1.0, -4));
+            Model = glm::scale(Model, glm::vec3(0.5f, 0.5f, 0.5f));
+            Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
+            Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
+            
+            glm::mat4 mvp = Projection * View * Model;
+            
+            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
+            glVertexAttribPointer(
+               0,
+               3,
+               GL_FLOAT,
+               GL_FALSE,
+               0,
+               (void*)0
+            );
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereIndexBuffer);
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, sphereUVBuffer);
+            
+            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+            glEnableVertexAttribArray( 1 );
+           
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, marsTextureImageID);
+            
+            glDrawElements(GL_TRIANGLES,                    // primitive type
+                           (GLsizei)sphereIndices.size(),          // # of indices
+                           GL_UNSIGNED_INT,                 // data type
+                           (void*)0);                       // offset to indices
+
+            
+            
+            sphereAngle += kSphereRotSpeed;
+        }
     
         
         glDisableVertexAttribArray(0);
