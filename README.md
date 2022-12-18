@@ -69,3 +69,10 @@ Then sign it with your identity like this:
 If you get an "already signed" error then add "-f" flag in front of the library path and re-run.
 
 
+
+
+## Credits
+
+
+- The example texture's I got are from https://opengameart.org/content/seamless-2
+

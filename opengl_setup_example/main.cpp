@@ -18,6 +18,7 @@
 #include <glm/ext.hpp>
 
 #include "shaders.h"
+#include "proc_textures.h"
 
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
@@ -62,9 +63,22 @@ static const GLfloat cube_vertex_data[] = {
     1.0f,-1.0f, 1.0f
 };
 
+static bool RunTests(void)
+{
+    bool good = true;
+    
+    good = good && TestGenerateCheckers();
+    
+    return good;
+}
 
 int main(int argc, const char** argv)
 {
+    if(!RunTests()) {
+        std::cerr << "Some tests failed" << std::endl;
+        return 1;
+    }
+    
     const GLint  kWindowWidth = 1024;
     const GLint kWindowHeight = 768;
 
@@ -139,7 +153,6 @@ int main(int argc, const char** argv)
     glm::mat4 Model = glm::mat4(1.0f);
     Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
     
-    glm::mat4 mvp = Projection * View * Model;
     
     GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
     
@@ -186,8 +199,7 @@ int main(int argc, const char** argv)
     
     while( !glfwWindowShouldClose(window)) {
         
-        glClear( GL_COLOR_BUFFER_BIT );
-        glClear (GL_DEPTH_BUFFER_BIT );
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glUseProgram(program);
         
