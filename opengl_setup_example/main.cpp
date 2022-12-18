@@ -135,8 +135,9 @@ static GLuint CreateTextureFromImage(RGBImageBuffer* imageBuffer)
                  GL_RGB,
                  GL_UNSIGNED_BYTE, imageBuffer->Pixels());
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
     
     return textureID;
 }
@@ -229,11 +230,6 @@ int main(int argc, const char** argv)
     
     
     GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
-    
-//    GLint triColorLocation = glGetUniformLocation(program, "tri_color");
-//    if (triColorLocation == -1) {
-//        std::cerr << "Could not bind attribute frag_color" << std::endl;
-//    }
 
     GLint aPositionLocation = glGetAttribLocation(program, "a_position");
     if (aPositionLocation == -1) {
@@ -269,25 +265,30 @@ int main(int argc, const char** argv)
     const RGBColor blue = {0, 0, 255};
     const RGBColor green = {0, 255, 0};
     const RGBColor white = {255, 255, 255};
+    const RGBColor orange = {232, 99, 10};
     
-    RGBImageBuffer* cubeTextureImage = GenerateCheckers(1024, 32, blue, green);
+    std::cout  << "Generating fractal browning motion" << std::endl;
+    
+    // RGBImageBuffer* cubeTextureImage = GenerateCheckers(1024, 32, blue, green);
+    // RGBImageBuffer* cubeTextureImage = GenerateMarble(512, blue, white);
+    RGBImageBuffer* cubeTextureImage = GenerateFractalBrownianMotion(512, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
     assert(cubeTextureImage);
     
     GLuint cubeTextureID = CreateTextureFromImage(cubeTextureImage);
-    
-
-    // TODO: mip mapping?
-    
     
     GLuint cubeUVBuffer;
     glGenBuffers(1, &cubeUVBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
     
-    RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
+    std::cout  << "Generating marble" << std::endl;
+    // RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
+    RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
     assert(triTextureImage);
     
+    
     GLuint triTextureID = CreateTextureFromImage(triTextureImage);
+    
 
     GLuint triangleUVBuffer;
     glGenBuffers(1, &triangleUVBuffer);
@@ -300,17 +301,13 @@ int main(int argc, const char** argv)
     const float kTriRotSpeed = 0.02;
     const float kCubeRotSpeed = 0.03;
     
+    
+    std::cout  << "starting main loop" << std::endl;
     while( !glfwWindowShouldClose(window)) {
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glUseProgram(program);
-        
-        // glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
-
-        
-       
-        
         
         glEnableVertexAttribArray(aPositionLocation);
         
@@ -339,21 +336,8 @@ int main(int argc, const char** argv)
             glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
             glEnableVertexAttribArray( 1 );
            
-            
-//            glEnableVertexAttribArray(1);
-//            glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
-//            glVertexAttribPointer(
-//                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-//                3,                                // size
-//                GL_FLOAT,                         // type
-//                GL_FALSE,                         // normalized?
-//                0,                                // stride
-//                (void*)0                          // array buffer offset
-//            );
-            
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, triTextureID);
-            
             
             
             glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -405,6 +389,8 @@ int main(int argc, const char** argv)
         
         
     }
+    
+    std::cout  << "cleaning up" << std::endl;
     
     if(cubeTextureImage) {
         delete cubeTextureImage;
