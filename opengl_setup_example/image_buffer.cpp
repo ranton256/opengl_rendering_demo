@@ -22,6 +22,20 @@ RGBImageBuffer::RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t chan
     SetSize(width, height, channels, padRows);
 }
 
+RGBImageBuffer::RGBImageBuffer(uint8_t* pixels, u_int32_t width, u_int32_t height,int32_t rowBytes, u_int16_t channels)
+{
+    mHeight = height;
+    mWidth = width;
+    mChannels = channels;
+    mRowBytes = rowBytes;
+    
+    auto pixBytes = width * channels;
+    assert(mRowBytes >= pixBytes);
+    
+    mPixels = pixels;
+    assert(mPixels != nullptr); // this means didn't get expected exception on failure.
+}
+
 RGBImageBuffer::~RGBImageBuffer()
 {
     FreePixels();

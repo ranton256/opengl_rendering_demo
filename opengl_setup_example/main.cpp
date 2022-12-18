@@ -19,9 +19,16 @@
 
 #include "shaders.h"
 #include "proc_textures.h"
+#include "pngreader.h"
 
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
+
+const RGBColor red = {255, 0, 0};
+const RGBColor blue = {0, 0, 255};
+const RGBColor green = {0, 255, 0};
+const RGBColor white = {255, 255, 255};
+const RGBColor orange = {232, 99, 10};
 
 // TODO: generate this programmitcally
 static const GLfloat cube_vertex_data[] = {
@@ -63,8 +70,6 @@ static const GLfloat cube_vertex_data[] = {
     1.0f,-1.0f, 1.0f
 };
 
-// TODO: generate this programmatically.
-// these values are from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#how-to-load-texture-with-glfw
 
 static const GLfloat gTriangleUVBufferData[] = {
     0, 0,
@@ -72,6 +77,8 @@ static const GLfloat gTriangleUVBufferData[] = {
     0.5, 1
 };
 
+// TODO: generate this programmatically.
+// these values are from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#how-to-load-texture-with-glfw
 
 static const GLfloat gCubeUVBufferData[] = {
     0.000059f, 1.0f-0.000004f,
@@ -141,6 +148,20 @@ static GLuint CreateTextureFromImage(RGBImageBuffer* imageBuffer)
     
     return textureID;
 }
+
+static RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
+{
+    uint32_t width, height;
+    uint8_t *pixels = nullptr;
+    
+    if(!ReadPNGImage(path, &pixels, &width, &height)) {
+        std::cerr << "Error loading image from " << path << std::endl;
+        return nullptr;
+    }
+    
+    return new RGBImageBuffer(pixels, width, height, width*3, 3);
+}
+
 
 int main(int argc, const char** argv)
 {
@@ -240,38 +261,47 @@ int main(int argc, const char** argv)
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
     
-    static const GLfloat g_vertex_buffer_data[] = {
+    static const GLfloat triVertexBufferData[] = {
        -1.0f, -1.0f, 0.0f,
        1.0f, -1.0f, 0.0f,
        0.0f,  1.0f, 0.0f,
     };
     
-    GLuint vao, vertexbuffer, cubeVertexBuffer;
+    GLuint vao;
     glGenVertexArrays(1, &vao);
-    
-    glGenBuffers(1, &vertexbuffer);
-    glGenBuffers(1, &cubeVertexBuffer);
-    
     glBindVertexArray(vao);
     
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    
+    GLuint triVertexBuffer;
+    glGenBuffers(1, &triVertexBuffer);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triVertexBufferData), triVertexBufferData, GL_STATIC_DRAW);
+    
+    GLuint cubeVertexBuffer;
+    glGenBuffers(1, &cubeVertexBuffer);
     
     glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
     
-    // Create texture
-    const RGBColor red = {255, 0, 0};
-    const RGBColor blue = {0, 0, 255};
-    const RGBColor green = {0, 255, 0};
-    const RGBColor white = {255, 255, 255};
-    const RGBColor orange = {232, 99, 10};
+    GLuint cubeTwoVertexBuffer;
+    glGenBuffers(1, &cubeTwoVertexBuffer);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
+    
+    
+    std::cout << "Loading textures" << std::endl;
+    
+    RGBImageBuffer *rockyTextureImage = LoadImageBufferFromPNG("textures/rocky.png");
+    assert(rockyTextureImage);
+    GLuint rockyTextureImageID = CreateTextureFromImage(rockyTextureImage);
     
     std::cout  << "Generating fractal browning motion" << std::endl;
     
     // RGBImageBuffer* cubeTextureImage = GenerateCheckers(1024, 32, blue, green);
     // RGBImageBuffer* cubeTextureImage = GenerateMarble(512, blue, white);
-    RGBImageBuffer* cubeTextureImage = GenerateFractalBrownianMotion(512, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
+    RGBImageBuffer* cubeTextureImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
     assert(cubeTextureImage);
     
     GLuint cubeTextureID = CreateTextureFromImage(cubeTextureImage);
@@ -282,8 +312,8 @@ int main(int argc, const char** argv)
     glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
     
     std::cout  << "Generating marble" << std::endl;
-    // RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
-    RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
+    RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
+    // RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
     assert(triTextureImage);
     
     
@@ -321,7 +351,7 @@ int main(int argc, const char** argv)
             
             glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
             
-            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
             glVertexAttribPointer(
                0, // idx
                3, // size
@@ -331,7 +361,6 @@ int main(int argc, const char** argv)
                (void*)0 // pointer
             );
             
-//
             glBindBuffer(GL_ARRAY_BUFFER, triangleUVBuffer);
             glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
             glEnableVertexAttribArray( 1 );
@@ -344,7 +373,7 @@ int main(int argc, const char** argv)
             
             triAngle += kTriRotSpeed;
         }
-        if(1){ // Cube
+        if(1){ // Cube one
             
             glm::mat4 Model = glm::mat4(1.0f);
             Model = glm::translate(Model, glm::vec3(-2.5, 0, -4));
@@ -380,13 +409,50 @@ int main(int argc, const char** argv)
             cubeAngle += kCubeRotSpeed;
         }
         
+        if(1)
+        { // Cube two
+            
+            glm::mat4 Model = glm::mat4(1.0f);
+            Model = glm::translate(Model, glm::vec3(2.5, 0, -4));
+            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
+            
+            glm::mat4 mvp = Projection * View * Model;
+            
+            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
+            glVertexAttribPointer(
+               0,
+               3,
+               GL_FLOAT,
+               GL_FALSE,
+               0,
+               (void*)0
+            );
+
+            glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
+            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+            glEnableVertexAttribArray( 1 );
+           
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, rockyTextureImageID);
+            
+            
+            // cube is 12 triangles, 2 each for 6 sides
+            glDrawArrays(GL_TRIANGLES, 0, 12*3);
+            
+            // cubeAngle += kCubeRotSpeed;
+        }
+        
+    
         
         glDisableVertexAttribArray(0);
         
         
         glfwSwapBuffers(window);
         glfwPollEvents();
-        
         
     }
     

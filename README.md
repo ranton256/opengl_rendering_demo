@@ -68,6 +68,11 @@ Then sign it with your identity like this:
 
 If you get an "already signed" error then add "-f" flag in front of the library path and re-run.
 
+## libpng
+
+install libpng, link statically with the libpng.a file
+
+install via homebrew as with others
 
 
 

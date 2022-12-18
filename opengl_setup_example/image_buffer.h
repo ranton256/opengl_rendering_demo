@@ -23,6 +23,7 @@ protected:
 public:
     RGBImageBuffer();
     RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t channels=3, bool padRows=false);
+    RGBImageBuffer(uint8_t* pixels, u_int32_t width, u_int32_t height,int32_t rowBytes, u_int16_t channels = 3);
     
     virtual ~RGBImageBuffer();
     
