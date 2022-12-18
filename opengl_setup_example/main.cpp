@@ -312,8 +312,8 @@ int main(int argc, const char** argv)
     glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
     
     std::cout  << "Generating marble" << std::endl;
-    RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
-    // RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
+    // RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
+    RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
     assert(triTextureImage);
     
     
