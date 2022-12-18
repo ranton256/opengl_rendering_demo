@@ -19,10 +19,10 @@ RGBImageBuffer* GenerateCheckers(u_int32_t textureSize, u_int32_t checkerSize, R
     uint8_t* rowPtr = pixels;
     
     for(u_int32_t y = 0; y < textureSize; y++) {
-        auto yChk = y % (checkerSize<<1);
+        auto yChk = (y / checkerSize) % 2;
         uint8_t* pp = rowPtr;
         for(u_int32_t x = 0; x < textureSize; x++) {
-            auto xChk = x % (checkerSize<<1);
+            auto xChk = (x / checkerSize) % 2;
             if(xChk == yChk) {
                 // color 1
                 *pp++ = colorA.r;
@@ -57,7 +57,7 @@ bool TestGenerateCheckers(void)
     assert(buffer->Width() == textureSize);
     assert(buffer->Height() == textureSize);
     assert(buffer->Channels() == 3);
-    assert(buffer->RowBytes() > 3 * textureSize);
+    assert(buffer->RowBytes() >= 3 * textureSize);
     
     
     

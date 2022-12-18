@@ -22,12 +22,12 @@ protected:
     
 public:
     RGBImageBuffer();
-    RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t channels=3);
+    RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t channels=3, bool padRows=false);
     
     virtual ~RGBImageBuffer();
     
     // set size and reallocate, discards current contents.
-    void SetSize(u_int32_t width, u_int32_t height, u_int16_t channels=3);
+    void SetSize(u_int32_t width, u_int32_t height, u_int16_t channels=3, bool padRows=false);
     
     u_int32_t Width(void) const { return mWidth; }
     u_int32_t Height(void) const { return mHeight; }

@@ -16,10 +16,10 @@ RGBImageBuffer::RGBImageBuffer()
     
 }
 
-RGBImageBuffer::RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t channels)
+RGBImageBuffer::RGBImageBuffer(u_int32_t width, u_int32_t height, u_int16_t channels, bool padRows)
     : mPixels(nullptr), mWidth(0), mHeight(0), mRowBytes(0), mChannels(0)
 {
-    SetSize(width, height);
+    SetSize(width, height, channels, padRows);
 }
 
 RGBImageBuffer::~RGBImageBuffer()
@@ -38,7 +38,7 @@ void RGBImageBuffer::FreePixels(void)
 }
 
 // set size and reallocate, discards current contents.
-void RGBImageBuffer::SetSize(u_int32_t width, u_int32_t height, u_int16_t channels)
+void RGBImageBuffer::SetSize(u_int32_t width, u_int32_t height, u_int16_t channels, bool padRows)
 {
     
     FreePixels();
@@ -48,10 +48,14 @@ void RGBImageBuffer::SetSize(u_int32_t width, u_int32_t height, u_int16_t channe
         mChannels = channels;
         
         auto pixBytes = width * channels;
-        // round up to 4.
-        mRowBytes = ((pixBytes + 3) >> 2) << 2;
+        if(padRows) {
+            // round up to 4.
+            mRowBytes = ((pixBytes + 3) >> 2) << 2;
+        } else {
+            mRowBytes = pixBytes;
+        }
         assert(mRowBytes >= pixBytes);
-        assert(mRowBytes % 4 == 0);
+        assert(padRows == false || mRowBytes % 4 == 0);
         
         mPixels = new uint8_t[mRowBytes * height];
         assert(mPixels != nullptr); // this means didn't get expected exception on failure.

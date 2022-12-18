@@ -63,6 +63,55 @@ static const GLfloat cube_vertex_data[] = {
     1.0f,-1.0f, 1.0f
 };
 
+// TODO: generate this programmatically.
+// these values are from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#how-to-load-texture-with-glfw
+
+static const GLfloat gTriangleUVBufferData[] = {
+    0, 0,
+    1, 0,
+    0.5, 1
+};
+
+
+static const GLfloat gCubeUVBufferData[] = {
+    0.000059f, 1.0f-0.000004f,
+    0.000103f, 1.0f-0.336048f,
+    0.335973f, 1.0f-0.335903f,
+    1.000023f, 1.0f-0.000013f,
+    0.667979f, 1.0f-0.335851f,
+    0.999958f, 1.0f-0.336064f,
+    0.667979f, 1.0f-0.335851f,
+    0.336024f, 1.0f-0.671877f,
+    0.667969f, 1.0f-0.671889f,
+    1.000023f, 1.0f-0.000013f,
+    0.668104f, 1.0f-0.000013f,
+    0.667979f, 1.0f-0.335851f,
+    0.000059f, 1.0f-0.000004f,
+    0.335973f, 1.0f-0.335903f,
+    0.336098f, 1.0f-0.000071f,
+    0.667979f, 1.0f-0.335851f,
+    0.335973f, 1.0f-0.335903f,
+    0.336024f, 1.0f-0.671877f,
+    1.000004f, 1.0f-0.671847f,
+    0.999958f, 1.0f-0.336064f,
+    0.667979f, 1.0f-0.335851f,
+    0.668104f, 1.0f-0.000013f,
+    0.335973f, 1.0f-0.335903f,
+    0.667979f, 1.0f-0.335851f,
+    0.335973f, 1.0f-0.335903f,
+    0.668104f, 1.0f-0.000013f,
+    0.336098f, 1.0f-0.000071f,
+    0.000103f, 1.0f-0.336048f,
+    0.000004f, 1.0f-0.671870f,
+    0.336024f, 1.0f-0.671877f,
+    0.000103f, 1.0f-0.336048f,
+    0.336024f, 1.0f-0.671877f,
+    0.335973f, 1.0f-0.335903f,
+    0.667969f, 1.0f-0.671889f,
+    1.000004f, 1.0f-0.671847f,
+    0.667979f, 1.0f-0.335851f
+};
+
 
 static bool RunTests(void)
 {
@@ -71,6 +120,25 @@ static bool RunTests(void)
     good = good && TestGenerateCheckers();
     
     return good;
+}
+
+static GLuint CreateTextureFromImage(RGBImageBuffer* imageBuffer)
+{
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Give the image to OpenGL
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB,
+                 imageBuffer->Width(), imageBuffer->Height(),
+                 0,
+                 GL_RGB,
+                 GL_UNSIGNED_BYTE, imageBuffer->Pixels());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    
+    return textureID;
 }
 
 int main(int argc, const char** argv)
@@ -196,32 +264,37 @@ int main(int argc, const char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
     
-    static GLfloat cubeColorBufferData[12*3*3];
-    for (int v = 0; v < 36; v++){
-        
-        cubeColorBufferData[3*v+0] = 0.2 + 0.2 * (v % 2);
-        cubeColorBufferData[3*v+1] = 0.2;
-        cubeColorBufferData[3*v+2] = 0.4 + 0.2 * (v % 3);
-    }
+    // Create texture
+    const RGBColor red = {255, 0, 0};
+    const RGBColor blue = {0, 0, 255};
+    const RGBColor green = {0, 255, 0};
+    const RGBColor white = {255, 255, 255};
     
-    GLuint cubeColorBuffer;
-    glGenBuffers(1, &cubeColorBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeColorBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeColorBufferData), cubeColorBufferData, GL_STATIC_DRAW);
-   
-    static GLfloat tri_color_buffer_data[3*3];
-    for (int v = 0; v < 3; v++){
-        tri_color_buffer_data[3*v+0] = 0.2 + v * 0.3;
-        tri_color_buffer_data[3*v+1] = 0.2;
-        tri_color_buffer_data[3*v+2] = 0.7;
-    }
+    RGBImageBuffer* cubeTextureImage = GenerateCheckers(1024, 32, blue, green);
+    assert(cubeTextureImage);
     
-    GLuint triColorBuffer;
-    glGenBuffers(1, &triColorBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tri_color_buffer_data), tri_color_buffer_data, GL_STATIC_DRAW);
+    GLuint cubeTextureID = CreateTextureFromImage(cubeTextureImage);
+    
 
+    // TODO: mip mapping?
+    
+    
+    GLuint cubeUVBuffer;
+    glGenBuffers(1, &cubeUVBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
+    
+    RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
+    assert(triTextureImage);
+    
+    GLuint triTextureID = CreateTextureFromImage(triTextureImage);
 
+    GLuint triangleUVBuffer;
+    glGenBuffers(1, &triangleUVBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triangleUVBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(gTriangleUVBufferData), gTriangleUVBufferData, GL_STATIC_DRAW);
+    
+    
     float triAngle = 0.0f;
     float cubeAngle = 0.0f;
     const float kTriRotSpeed = 0.02;
@@ -253,25 +326,35 @@ int main(int argc, const char** argv)
             
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
             glVertexAttribPointer(
-               0,
-               3,
-               GL_FLOAT,
-               GL_FALSE,
-               0,
-               (void*)0
+               0, // idx
+               3, // size
+               GL_FLOAT, // type
+               GL_FALSE, // normalized
+               0, // stride
+               (void*)0 // pointer
             );
             
+//
+            glBindBuffer(GL_ARRAY_BUFFER, triangleUVBuffer);
+            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+            glEnableVertexAttribArray( 1 );
+           
             
-            glEnableVertexAttribArray(1);
-            glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
-            glVertexAttribPointer(
-                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-                3,                                // size
-                GL_FLOAT,                         // type
-                GL_FALSE,                         // normalized?
-                0,                                // stride
-                (void*)0                          // array buffer offset
-            );
+//            glEnableVertexAttribArray(1);
+//            glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
+//            glVertexAttribPointer(
+//                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+//                3,                                // size
+//                GL_FLOAT,                         // type
+//                GL_FALSE,                         // normalized?
+//                0,                                // stride
+//                (void*)0                          // array buffer offset
+//            );
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, triTextureID);
+            
+            
             
             glDrawArrays(GL_TRIANGLES, 0, 3);
             
@@ -298,18 +381,13 @@ int main(int argc, const char** argv)
                0,
                (void*)0
             );
-            
-            
-            glEnableVertexAttribArray(1);
-            glBindBuffer(GL_ARRAY_BUFFER, cubeColorBuffer);
-            glVertexAttribPointer(
-                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-                3,                                // size
-                GL_FLOAT,                         // type
-                GL_FALSE,                         // normalized?
-                0,                                // stride
-                (void*)0                          // array buffer offset
-            );
+ 
+            glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
+            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+            glEnableVertexAttribArray( 1 );
+           
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cubeTextureID);
             
             
             // cube is 12 triangles, 2 each for 6 sides
@@ -326,6 +404,13 @@ int main(int argc, const char** argv)
         glfwPollEvents();
         
         
+    }
+    
+    if(cubeTextureImage) {
+        delete cubeTextureImage;
+    }
+    if(triTextureImage) {
+        delete triTextureImage;
     }
     
     glfwTerminate();
