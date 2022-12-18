@@ -23,7 +23,7 @@
 const char* kVertexShaderPath = "vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
 
-
+// TODO: generate this programmitcally
 static const GLfloat cube_vertex_data[] = {
     -1.0f,-1.0f,-1.0f,
     -1.0f,-1.0f, 1.0f,
@@ -62,6 +62,7 @@ static const GLfloat cube_vertex_data[] = {
     -1.0f, 1.0f, 1.0f,
     1.0f,-1.0f, 1.0f
 };
+
 
 static bool RunTests(void)
 {
@@ -128,6 +129,11 @@ int main(int argc, const char** argv)
     glFrontFace( GL_CCW );
     glEnable( GL_CULL_FACE );
     
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+    
     
     glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
 
@@ -156,10 +162,10 @@ int main(int argc, const char** argv)
     
     GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
     
-    GLint triColorLocation = glGetUniformLocation(program, "tri_color");
-    if (triColorLocation == -1) {
-        std::cerr << "Could not bind attribute frag_color" << std::endl;
-    }
+//    GLint triColorLocation = glGetUniformLocation(program, "tri_color");
+//    if (triColorLocation == -1) {
+//        std::cerr << "Could not bind attribute frag_color" << std::endl;
+//    }
 
     GLint aPositionLocation = glGetAttribLocation(program, "a_position");
     if (aPositionLocation == -1) {
@@ -190,8 +196,32 @@ int main(int argc, const char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
     
+    static GLfloat cubeColorBufferData[12*3*3];
+    for (int v = 0; v < 36; v++){
+        
+        cubeColorBufferData[3*v+0] = 0.2 + 0.2 * (v % 2);
+        cubeColorBufferData[3*v+1] = 0.2;
+        cubeColorBufferData[3*v+2] = 0.4 + 0.2 * (v % 3);
+    }
     
+    GLuint cubeColorBuffer;
+    glGenBuffers(1, &cubeColorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeColorBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeColorBufferData), cubeColorBufferData, GL_STATIC_DRAW);
+   
+    static GLfloat tri_color_buffer_data[3*3];
+    for (int v = 0; v < 3; v++){
+        tri_color_buffer_data[3*v+0] = 0.2 + v * 0.3;
+        tri_color_buffer_data[3*v+1] = 0.2;
+        tri_color_buffer_data[3*v+2] = 0.7;
+    }
     
+    GLuint triColorBuffer;
+    glGenBuffers(1, &triColorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tri_color_buffer_data), tri_color_buffer_data, GL_STATIC_DRAW);
+
+
     float triAngle = 0.0f;
     float cubeAngle = 0.0f;
     const float kTriRotSpeed = 0.02;
@@ -203,7 +233,7 @@ int main(int argc, const char** argv)
         
         glUseProgram(program);
         
-        glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
+        // glUniform4f(triColorLocation, (GLfloat)0.3f, (GLfloat)0.1f, (GLfloat)0.1f, (GLfloat)1.0f);
 
         
        
@@ -231,6 +261,18 @@ int main(int argc, const char** argv)
                (void*)0
             );
             
+            
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, triColorBuffer);
+            glVertexAttribPointer(
+                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+                3,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
+            
             glDrawArrays(GL_TRIANGLES, 0, 3);
             
             triAngle += kTriRotSpeed;
@@ -256,6 +298,19 @@ int main(int argc, const char** argv)
                0,
                (void*)0
             );
+            
+            
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, cubeColorBuffer);
+            glVertexAttribPointer(
+                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+                3,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+            );
+            
             
             // cube is 12 triangles, 2 each for 6 sides
             glDrawArrays(GL_TRIANGLES, 0, 12*3);
