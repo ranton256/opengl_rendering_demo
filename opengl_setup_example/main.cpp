@@ -22,6 +22,7 @@
 #include "shaders.h"
 #include "proc_textures.h"
 #include "pngreader.h"
+#include "cube.h"
 #include "sphere.h"
 #include "pyramid.h"
 #include "mathutil.h"
@@ -35,94 +36,12 @@ const RGBColor green = {0, 255, 0};
 const RGBColor white = {255, 255, 255};
 const RGBColor orange = {232, 99, 10};
 
-// TODO: generate this programmitcally
-static const GLfloat cube_vertex_data[] = {
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    -1.0f,-1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    -1.0f,-1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f,-1.0f,
-    1.0f,-1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f,-1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,-1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f,
-    1.0f,-1.0f, 1.0f
-};
-
-
 static const GLfloat gTriangleUVBufferData[] = {
     0, 0,
     1, 0,
     0.5, 1
 };
 
-// TODO: generate this programmatically.
-// these values are from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/#how-to-load-texture-with-glfw
-
-static const GLfloat gCubeUVBufferData[] = {
-    0.000059f, 1.0f-0.000004f,
-    0.000103f, 1.0f-0.336048f,
-    0.335973f, 1.0f-0.335903f,
-    1.000023f, 1.0f-0.000013f,
-    0.667979f, 1.0f-0.335851f,
-    0.999958f, 1.0f-0.336064f,
-    0.667979f, 1.0f-0.335851f,
-    0.336024f, 1.0f-0.671877f,
-    0.667969f, 1.0f-0.671889f,
-    1.000023f, 1.0f-0.000013f,
-    0.668104f, 1.0f-0.000013f,
-    0.667979f, 1.0f-0.335851f,
-    0.000059f, 1.0f-0.000004f,
-    0.335973f, 1.0f-0.335903f,
-    0.336098f, 1.0f-0.000071f,
-    0.667979f, 1.0f-0.335851f,
-    0.335973f, 1.0f-0.335903f,
-    0.336024f, 1.0f-0.671877f,
-    1.000004f, 1.0f-0.671847f,
-    0.999958f, 1.0f-0.336064f,
-    0.667979f, 1.0f-0.335851f,
-    0.668104f, 1.0f-0.000013f,
-    0.335973f, 1.0f-0.335903f,
-    0.667979f, 1.0f-0.335851f,
-    0.335973f, 1.0f-0.335903f,
-    0.668104f, 1.0f-0.000013f,
-    0.336098f, 1.0f-0.000071f,
-    0.000103f, 1.0f-0.336048f,
-    0.000004f, 1.0f-0.671870f,
-    0.336024f, 1.0f-0.671877f,
-    0.000103f, 1.0f-0.336048f,
-    0.336024f, 1.0f-0.671877f,
-    0.335973f, 1.0f-0.335903f,
-    0.667969f, 1.0f-0.671889f,
-    1.000004f, 1.0f-0.671847f,
-    0.667979f, 1.0f-0.335851f
-};
 
 
 static bool RunTests(void)
@@ -291,17 +210,20 @@ int main(int argc, const char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(triVertexBufferData), triVertexBufferData, GL_STATIC_DRAW);
     
+    std::vector<float> cubeVertexData, cubeUVData;
+    GenerateCube(cubeVertexData, cubeUVData);
+    
     GLuint cubeVertexBuffer;
     glGenBuffers(1, &cubeVertexBuffer);
     
     glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cubeVertexData.size() * sizeof(float), cubeVertexData.data(), GL_STATIC_DRAW);
     
     GLuint cubeTwoVertexBuffer;
     glGenBuffers(1, &cubeTwoVertexBuffer);
     
     glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertex_data), cube_vertex_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cubeVertexData.size() * sizeof(float), cubeVertexData.data(), GL_STATIC_DRAW);
     
     
     std::cout << "Loading textures" << std::endl;
@@ -320,7 +242,7 @@ int main(int argc, const char** argv)
     GLuint cubeUVBuffer;
     glGenBuffers(1, &cubeUVBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, cubeUVData.size() * sizeof(float), cubeUVData.data(), GL_STATIC_DRAW);
     
     std::cout  << "Generating marble" << std::endl;
     RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
