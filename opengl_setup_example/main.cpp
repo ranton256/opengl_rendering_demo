@@ -36,13 +36,6 @@ const RGBColor green = {0, 255, 0};
 const RGBColor white = {255, 255, 255};
 const RGBColor orange = {232, 99, 10};
 
-static const GLfloat gTriangleUVBufferData[] = {
-    0, 0,
-    1, 0,
-    0.5, 1
-};
-
-
 
 static bool RunTests(void)
 {
@@ -86,6 +79,39 @@ static RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
     return new RGBImageBuffer(pixels, width, height, width*3, 3);
 }
 
+struct TriangleObject {
+    std::vector<float> vertexData;
+    std::vector<float> texCoords;
+    // TODO: normals
+    glm::mat4 mv;
+    GLuint vertexBuffer, uvBuffer;
+    GLuint textureID;
+};
+
+static void DrawObject(GLuint mvUniformLocation, TriangleObject& obj)
+{
+    glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(obj.mv));
+    
+    glBindBuffer(GL_ARRAY_BUFFER, obj.vertexBuffer);
+    glVertexAttribPointer(
+       0,
+       3,
+       GL_FLOAT,
+       GL_FALSE,
+       0,
+       (void*)0
+    );
+
+    glBindBuffer(GL_ARRAY_BUFFER, obj.uvBuffer);
+    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+    glEnableVertexAttribArray( 1 );
+   
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, obj.textureID);
+    
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)obj.vertexData.size());
+    
+}
 
 int main(int argc, const char** argv)
 {
@@ -143,11 +169,8 @@ int main(int argc, const char** argv)
     glFrontFace( GL_CCW );
     glEnable( GL_CULL_FACE );
     
-    // Enable depth test
     glEnable(GL_DEPTH_TEST);
-    // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
-    
     
     glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
 
@@ -156,6 +179,13 @@ int main(int argc, const char** argv)
         std::cerr << "Could not initialize shaders" << std::endl;
         return 1;
     }
+    
+    // load textures
+    std::cout  << "Generating marble" << std::endl;
+    RGBImageBuffer* marbleImage = GenerateMarble(512, blue, white);
+    assert(marbleImage);
+
+    
 
     const float fovyInDegrees = 45.0f;
     const float aspectRatio = (float) screenWidth / (float)screenHeight;
@@ -173,8 +203,6 @@ int main(int argc, const char** argv)
     glm::mat4 Model = glm::mat4(1.0f);
     Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
     
-    
-    // GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
     GLint mvUniformLocation = glGetUniformLocation(program, "mvMatrix");
     if (mvUniformLocation == -1) {
         std::cerr << "Could not bind mvUniformLocation" << std::endl;
@@ -193,10 +221,15 @@ int main(int argc, const char** argv)
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
     
-    static const GLfloat triVertexBufferData[] = {
+    static const float triVertexBufferData[] = {
        -1.0f, -1.0f, 0.0f,
        1.0f, -1.0f, 0.0f,
        0.0f,  1.0f, 0.0f,
+    };
+    static const GLfloat triTexCoords[] = {
+        0, 0,
+        1, 0,
+        0.5, 1
     };
     
     GLuint vao;
@@ -204,12 +237,25 @@ int main(int argc, const char** argv)
     glBindVertexArray(vao);
     
     
-    GLuint triVertexBuffer;
-    glGenBuffers(1, &triVertexBuffer);
+    // TRIANGLE
+    TriangleObject triObj;
+    triObj.vertexData.assign(triVertexBufferData, triVertexBufferData + sizeof(triVertexBufferData)/sizeof(float));
+    triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
     
-    glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triVertexBufferData), triVertexBufferData, GL_STATIC_DRAW);
     
+    glGenBuffers(1, &triObj.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, triObj.vertexData.size() * sizeof(float), triObj.vertexData.data(), GL_STATIC_DRAW);
+    
+    triObj.textureID = CreateTextureFromImage(marbleImage);
+    
+    glGenBuffers(1, &triObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, triObj.texCoords.size() * sizeof(float), triObj.texCoords.data(), GL_STATIC_DRAW);
+    
+    
+    
+    // CUBE
     std::vector<float> cubeVertexData, cubeUVData;
     GenerateCube(cubeVertexData, cubeUVData);
     
@@ -243,18 +289,6 @@ int main(int argc, const char** argv)
     glGenBuffers(1, &cubeUVBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
     glBufferData(GL_ARRAY_BUFFER, cubeUVData.size() * sizeof(float), cubeUVData.data(), GL_STATIC_DRAW);
-    
-    std::cout  << "Generating marble" << std::endl;
-    RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
-    assert(triTextureImage);
-    
-    GLuint triTextureID = CreateTextureFromImage(triTextureImage);
-    
-
-    GLuint triangleUVBuffer;
-    glGenBuffers(1, &triangleUVBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triangleUVBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(gTriangleUVBufferData), gTriangleUVBufferData, GL_STATIC_DRAW);
     
     
     std::vector<float> sphereVertices, sphereNormals, sphereUVData;
@@ -324,37 +358,14 @@ int main(int argc, const char** argv)
         
         glEnableVertexAttribArray(aPositionLocation);
         
+        glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
+        
+        
         if (1) { // Triangle
-            
-            glm::mat4 Model = glm::mat4(1.0f);
-            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
-            
-            // glm::mat4 mvp = Projection * View * Model;
-            glm::mat4 mv = View * Model;
-            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
-            
-            glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
-            glVertexAttribPointer(
-               0, // idx
-               3, // size
-               GL_FLOAT, // type
-               GL_FALSE, // normalized
-               0, // stride
-               (void*)0 // pointer
-            );
-            
-            glBindBuffer(GL_ARRAY_BUFFER, triangleUVBuffer);
-            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-            glEnableVertexAttribArray( 1 );
-           
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, triTextureID);
-            
-            
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            
+            triObj.mv = View * Model;
+            DrawObject(mvUniformLocation, triObj);
             triAngle += kTriRotSpeed;
         }
         if(1){ // Cube one
@@ -366,7 +377,6 @@ int main(int argc, const char** argv)
             
             glm::mat4 mv = View * Model;
             glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
             glVertexAttribPointer(
@@ -386,8 +396,7 @@ int main(int argc, const char** argv)
             glBindTexture(GL_TEXTURE_2D, cubeTextureID);
             
             
-            // cube is 12 triangles, 2 each for 6 sides
-            glDrawArrays(GL_TRIANGLES, 0, 12*3);
+            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)cubeVertexData.size());
             
             cubeAngle += kCubeRotSpeed;
         }
@@ -402,7 +411,6 @@ int main(int argc, const char** argv)
             
             glm::mat4 mv = View * Model;
             glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
@@ -423,8 +431,7 @@ int main(int argc, const char** argv)
             glBindTexture(GL_TEXTURE_2D, rockyTextureImageID);
             
             
-            // cube is 12 triangles, 2 each for 6 sides
-            glDrawArrays(GL_TRIANGLES, 0, 12*3);
+            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)cubeVertexData.size());
             
             // cubeAngle += kCubeRotSpeed;
         }
@@ -439,7 +446,6 @@ int main(int argc, const char** argv)
             
             glm::mat4 mv = View * Model;
             glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
@@ -482,7 +488,6 @@ int main(int argc, const char** argv)
             
             glm::mat4 mv = View * Model;
             glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
@@ -521,8 +526,14 @@ int main(int argc, const char** argv)
     if(cubeTextureImage) {
         delete cubeTextureImage;
     }
-    if(triTextureImage) {
-        delete triTextureImage;
+    if(marbleImage) {
+        delete marbleImage;
+    }
+    if(marsTextureImage) {
+        delete marsTextureImage;
+    }
+    if(checkersTextureImage) {
+        delete checkersTextureImage;
     }
     
     glfwTerminate();
