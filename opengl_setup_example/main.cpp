@@ -79,6 +79,7 @@ static RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
     return new RGBImageBuffer(pixels, width, height, width*3, 3);
 }
 
+// TODO: rename this.
 struct TriangleObject {
     std::vector<float> vertexData;
     std::vector<float> texCoords;
@@ -110,6 +111,33 @@ static void DrawObject(GLuint mvUniformLocation, TriangleObject& obj)
     glBindTexture(GL_TEXTURE_2D, obj.textureID);
     
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)obj.vertexData.size());
+    
+}
+
+static void MakeTriangle(TriangleObject& triObj)
+{
+    static const float triVertexBufferData[] = {
+       -1.0f, -1.0f, 0.0f,
+       1.0f, -1.0f, 0.0f,
+       0.0f,  1.0f, 0.0f,
+    };
+    static const GLfloat triTexCoords[] = {
+        0, 0,
+        1, 0,
+        0.5, 1
+    };
+
+    triObj.vertexData.assign(triVertexBufferData, triVertexBufferData + sizeof(triVertexBufferData)/sizeof(float));
+    triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
+    
+    glGenBuffers(1, &triObj.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, triObj.vertexData.size() * sizeof(float), triObj.vertexData.data(), GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &triObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, triObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, triObj.texCoords.size() * sizeof(float), triObj.texCoords.data(), GL_STATIC_DRAW);
+    
     
 }
 
@@ -179,13 +207,6 @@ int main(int argc, const char** argv)
         std::cerr << "Could not initialize shaders" << std::endl;
         return 1;
     }
-    
-    // load textures
-    std::cout  << "Generating marble" << std::endl;
-    RGBImageBuffer* marbleImage = GenerateMarble(512, blue, white);
-    assert(marbleImage);
-
-    
 
     const float fovyInDegrees = 45.0f;
     const float aspectRatio = (float) screenWidth / (float)screenHeight;
@@ -217,78 +238,82 @@ int main(int argc, const char** argv)
         std::cerr << "Could not bind attribute a_position" << std::endl;
     }
     
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-    
-    static const float triVertexBufferData[] = {
-       -1.0f, -1.0f, 0.0f,
-       1.0f, -1.0f, 0.0f,
-       0.0f,  1.0f, 0.0f,
-    };
-    static const GLfloat triTexCoords[] = {
-        0, 0,
-        1, 0,
-        0.5, 1
-    };
     
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
     
-    // TRIANGLE
-    TriangleObject triObj;
-    triObj.vertexData.assign(triVertexBufferData, triVertexBufferData + sizeof(triVertexBufferData)/sizeof(float));
-    triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
+    //  Textures
+    std::cout  << "Generating checkers" << std::endl;
+    RGBImageBuffer* checkersTextureImage = GenerateCheckers(1024, 32, blue, green);
+    assert(checkersTextureImage);
+    GLuint checkersTextureID = CreateTextureFromImage(checkersTextureImage);
+
+    std::cout  << "Generating marble" << std::endl;
+    RGBImageBuffer* marbleImage = GenerateMarble(512, blue, white);
+    assert(marbleImage);
+    GLuint marbleTextureID = CreateTextureFromImage(marbleImage);
     
-    
-    glGenBuffers(1, &triObj.vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, triObj.vertexData.size() * sizeof(float), triObj.vertexData.data(), GL_STATIC_DRAW);
-    
-    triObj.textureID = CreateTextureFromImage(marbleImage);
-    
-    glGenBuffers(1, &triObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, triObj.texCoords.size() * sizeof(float), triObj.texCoords.data(), GL_STATIC_DRAW);
-    
-    
-    
-    // CUBE
-    std::vector<float> cubeVertexData, cubeUVData;
-    GenerateCube(cubeVertexData, cubeUVData);
-    
-    GLuint cubeVertexBuffer;
-    glGenBuffers(1, &cubeVertexBuffer);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeVertexData.size() * sizeof(float), cubeVertexData.data(), GL_STATIC_DRAW);
-    
-    GLuint cubeTwoVertexBuffer;
-    glGenBuffers(1, &cubeTwoVertexBuffer);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeVertexData.size() * sizeof(float), cubeVertexData.data(), GL_STATIC_DRAW);
-    
-    
-    std::cout << "Loading textures" << std::endl;
-    
+    std::cout << "Loading image textures" << std::endl;
     RGBImageBuffer *rockyTextureImage = LoadImageBufferFromPNG("textures/rocky.png");
     assert(rockyTextureImage);
     GLuint rockyTextureImageID = CreateTextureFromImage(rockyTextureImage);
     
+    RGBImageBuffer *marsTextureImage = LoadImageBufferFromPNG("textures/mars.png");
+    assert(marsTextureImage);
+    GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
+    
     std::cout  << "Generating fractal browning motion" << std::endl;
+    RGBImageBuffer* fbmImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
+    assert(fbmImage);
+    GLuint fbmTextureID = CreateTextureFromImage(fbmImage);
     
-    RGBImageBuffer* cubeTextureImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
-    assert(cubeTextureImage);
     
-    GLuint cubeTextureID = CreateTextureFromImage(cubeTextureImage);
+    // Shapes
+    TriangleObject triObj;
+    MakeTriangle(triObj);
     
-    GLuint cubeUVBuffer;
-    glGenBuffers(1, &cubeUVBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeUVData.size() * sizeof(float), cubeUVData.data(), GL_STATIC_DRAW);
+    triObj.textureID = marbleTextureID;
+    
+    
+    // TODO: TriangleObject is a terrible name.
+    // CUBE
+    TriangleObject cubeObj;
+    
+    GenerateCube(cubeObj.vertexData, cubeObj.texCoords);
+    
+    glGenBuffers(1, &cubeObj.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, cubeObj.vertexData.size() * sizeof(float), cubeObj.vertexData.data(), GL_STATIC_DRAW);
+ 
+    glGenBuffers(1, &cubeObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, cubeObj.texCoords.size() * sizeof(float), cubeObj.texCoords.data(), GL_STATIC_DRAW);
+    
+    cubeObj.textureID = fbmTextureID;
+    
+    // TODO: refactor these things out.
+    
+    // CUBE TWO
+    TriangleObject cubeTwoObj;
+    GenerateCube(cubeTwoObj.vertexData, cubeTwoObj.texCoords);
+    
+    glGenBuffers(1, &cubeTwoObj.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, cubeTwoObj.vertexData.size() * sizeof(float), cubeTwoObj.vertexData.data(), GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &cubeTwoObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, cubeTwoObj.texCoords.size() * sizeof(float), cubeTwoObj.texCoords.data(), GL_STATIC_DRAW);
+    
+    cubeTwoObj.textureID = rockyTextureImageID;
+    
+    
     
     
     std::vector<float> sphereVertices, sphereNormals, sphereUVData;
@@ -313,30 +338,23 @@ int main(int argc, const char** argv)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereIndices.size() * sizeof(int), sphereIndices.data(), GL_STATIC_DRAW);
     
     
-    RGBImageBuffer *marsTextureImage = LoadImageBufferFromPNG("textures/mars.png");
-    assert(marsTextureImage);
-    GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
-    
-    std::vector<float> pyramidVertexData, pyramidUVData;
-    GeneratePyramid(pyramidVertexData, pyramidUVData);
-    
-    GLuint pyramidVertexBuffer;
-    glGenBuffers(1, &pyramidVertexBuffer);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, pyramidVertexData.size() * sizeof(float), pyramidVertexData.data(), GL_STATIC_DRAW);
     
     
-    GLuint pyramidUVBuffer;
-    glGenBuffers(1, &pyramidUVBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, pyramidUVBuffer);
-    glBufferData(GL_ARRAY_BUFFER, pyramidUVData.size() * sizeof(float), pyramidUVData.data(), GL_STATIC_DRAW);
     
-    RGBImageBuffer* checkersTextureImage = GenerateCheckers(1024, 32, blue, green);
-    assert(checkersTextureImage);
+    // Pyramid
+    TriangleObject pyramidObj;
+    GeneratePyramid(pyramidObj.vertexData, pyramidObj.texCoords);
     
-    GLuint checkersTextureID = CreateTextureFromImage(checkersTextureImage);
+    glGenBuffers(1, &pyramidObj.vertexBuffer);
     
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, pyramidObj.vertexData.size() * sizeof(float), pyramidObj.vertexData.data(), GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &pyramidObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, pyramidObj.texCoords.size() * sizeof(float), pyramidObj.texCoords.data(), GL_STATIC_DRAW);
+    
+    pyramidObj.textureID = checkersTextureID;
     
     
     
@@ -370,33 +388,12 @@ int main(int argc, const char** argv)
         }
         if(1){ // Cube one
             
-            glm::mat4 Model = glm::mat4(1.0f);
-            Model = glm::translate(Model, glm::vec3(-2.5, 0, -4));
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5, 0, -4));
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            glm::mat4 mv = View * Model;
-            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            
-            glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
-            glVertexAttribPointer(
-               0,
-               3,
-               GL_FLOAT,
-               GL_FALSE,
-               0,
-               (void*)0
-            );
- 
-            glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
-            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-            glEnableVertexAttribArray( 1 );
-           
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cubeTextureID);
-            
-            
-            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)cubeVertexData.size());
+            cubeObj.mv = View * Model;
+            DrawObject(mvUniformLocation, cubeObj);
             
             cubeAngle += kCubeRotSpeed;
         }
@@ -404,42 +401,19 @@ int main(int argc, const char** argv)
         if(1)
         { // Cube two
             
-            glm::mat4 Model = glm::mat4(1.0f);
-            Model = glm::translate(Model, glm::vec3(2.5, 0, -4));
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5, 0, -4));
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            glm::mat4 mv = View * Model;
-            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            
-            
-            glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
-            glVertexAttribPointer(
-               0,
-               3,
-               GL_FLOAT,
-               GL_FALSE,
-               0,
-               (void*)0
-            );
-
-            glBindBuffer(GL_ARRAY_BUFFER, cubeUVBuffer);
-            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-            glEnableVertexAttribArray( 1 );
-           
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, rockyTextureImageID);
-            
-            
-            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)cubeVertexData.size());
+            cubeTwoObj.mv = View * Model;
+            DrawObject(mvUniformLocation, cubeTwoObj);
             
             // cubeAngle += kCubeRotSpeed;
         }
         if(1)
         { // Sphere
             
-            glm::mat4 Model = glm::mat4(1.0f);
-            Model = glm::translate(Model, glm::vec3(0, 1.0, -4));
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 1.0, -4));
             Model = glm::scale(Model, glm::vec3(0.5f, 0.5f, 0.5f));
             Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
             Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
@@ -480,36 +454,13 @@ int main(int argc, const char** argv)
         if(1)
         { // Pyramid
             
-            glm::mat4 Model = glm::mat4(1.0f);
-            Model = glm::translate(Model, glm::vec3(0, -2, -4));
-            // Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, -4));
             Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
             Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
             
-            glm::mat4 mv = View * Model;
-            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            
-            
-            glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
-            glVertexAttribPointer(
-               0,
-               3,
-               GL_FLOAT,
-               GL_FALSE,
-               0,
-               (void*)0
-            );
+            pyramidObj.mv = View * Model;
+            DrawObject(mvUniformLocation, pyramidObj);
 
-            glBindBuffer(GL_ARRAY_BUFFER, pyramidUVBuffer);
-            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-            glEnableVertexAttribArray( 1 );
-           
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, checkersTextureID);
-            
-            
-            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)pyramidVertexData.size());
-            
             pyramidAngle += kPyramidRotSpeed;
         }
         
@@ -523,8 +474,8 @@ int main(int argc, const char** argv)
     
     std::cout  << "cleaning up" << std::endl;
     
-    if(cubeTextureImage) {
-        delete cubeTextureImage;
+    if(fbmImage) {
+        delete fbmImage;
     }
     if(marbleImage) {
         delete marbleImage;
