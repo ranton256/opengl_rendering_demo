@@ -23,6 +23,7 @@
 #include "proc_textures.h"
 #include "pngreader.h"
 #include "sphere.h"
+#include "pyramid.h"
 #include "mathutil.h"
 
 const char* kVertexShaderPath = "vertex_shader.glsl";
@@ -303,8 +304,6 @@ int main(int argc, const char** argv)
     
     std::cout  << "Generating fractal browning motion" << std::endl;
     
-    // RGBImageBuffer* cubeTextureImage = GenerateCheckers(1024, 32, blue, green);
-    // RGBImageBuffer* cubeTextureImage = GenerateMarble(512, blue, white);
     RGBImageBuffer* cubeTextureImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
     assert(cubeTextureImage);
     
@@ -316,10 +315,8 @@ int main(int argc, const char** argv)
     glBufferData(GL_ARRAY_BUFFER, sizeof(gCubeUVBufferData), gCubeUVBufferData, GL_STATIC_DRAW);
     
     std::cout  << "Generating marble" << std::endl;
-    // RGBImageBuffer* triTextureImage = GenerateCheckers(1024, 32, white, red);
     RGBImageBuffer* triTextureImage = GenerateMarble(512, blue, white);
     assert(triTextureImage);
-    
     
     GLuint triTextureID = CreateTextureFromImage(triTextureImage);
     
@@ -356,13 +353,37 @@ int main(int argc, const char** argv)
     assert(marsTextureImage);
     GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
     
+    std::vector<float> pyramidVertexData, pyramidUVData;
+    GeneratePyramid(pyramidVertexData, pyramidUVData);
+    
+    GLuint pyramidVertexBuffer;
+    glGenBuffers(1, &pyramidVertexBuffer);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, pyramidVertexData.size() * sizeof(float), pyramidVertexData.data(), GL_STATIC_DRAW);
+    
+    
+    GLuint pyramidUVBuffer;
+    glGenBuffers(1, &pyramidUVBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, pyramidUVBuffer);
+    glBufferData(GL_ARRAY_BUFFER, pyramidUVData.size() * sizeof(float), pyramidUVData.data(), GL_STATIC_DRAW);
+    
+    RGBImageBuffer* checkersTextureImage = GenerateCheckers(1024, 32, blue, green);
+    assert(checkersTextureImage);
+    
+    GLuint checkersTextureID = CreateTextureFromImage(checkersTextureImage);
+    
+    
+    
     
     float triAngle = 0.0f;
     float cubeAngle = 0.0f;
     float sphereAngle = 0.0f;
+    float pyramidAngle = 0.0f;
     const float kTriRotSpeed = 0.02;
     const float kCubeRotSpeed = 0.03;
     const float kSphereRotSpeed = 0.01;
+    const float kPyramidRotSpeed = 0.025;
     
     std::cout  << "starting main loop" << std::endl;
     while( !glfwWindowShouldClose(window)) {
@@ -520,7 +541,42 @@ int main(int argc, const char** argv)
             
             sphereAngle += kSphereRotSpeed;
         }
-    
+        if(1)
+        { // Pyramid
+            
+            glm::mat4 Model = glm::mat4(1.0f);
+            Model = glm::translate(Model, glm::vec3(0, -2, -4));
+            // Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
+            Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
+            Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
+            
+            glm::mat4 mvp = Projection * View * Model;
+            
+            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);
+            glVertexAttribPointer(
+               0,
+               3,
+               GL_FLOAT,
+               GL_FALSE,
+               0,
+               (void*)0
+            );
+
+            glBindBuffer(GL_ARRAY_BUFFER, pyramidUVBuffer);
+            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+            glEnableVertexAttribArray( 1 );
+           
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, checkersTextureID);
+            
+            
+            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)pyramidVertexData.size());
+            
+            pyramidAngle += kPyramidRotSpeed;
+        }
         
         glDisableVertexAttribArray(0);
         
