@@ -8,14 +8,18 @@ layout(location = 1) in vec2 vertexUV;
 
 out vec2 UV;
 
-uniform mat4 mvp_matrix;
+// uniform mat4 mvp_matrix;
+uniform mat4 mvMatrix;
+uniform mat4 projMatrix;
+
 
 void main( )
 {
     // v_color =- vec4(a_position, 1.0) * 0.5 + vec4(0.5, 0.5, 0.5, 0.5) * tri_color;
     // v_color = vec4(vertexColor, 1.0);
     
-    gl_Position = mvp_matrix * vec4(a_position, 1.0);
+    // gl_Position = mvp_matrix * vec4(a_position, 1.0);
+    gl_Position = projMatrix * mvMatrix * vec4(a_position, 1.0);
     UV = vertexUV;
 }
 

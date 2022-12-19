@@ -255,8 +255,16 @@ int main(int argc, const char** argv)
     Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
     
     
-    GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
-
+    // GLint mvpUniformLocation = glGetUniformLocation(program, "mvp_matrix");
+    GLint mvUniformLocation = glGetUniformLocation(program, "mvMatrix");
+    if (mvUniformLocation == -1) {
+        std::cerr << "Could not bind mvUniformLocation" << std::endl;
+    }
+    GLint projUniformLocation = glGetUniformLocation(program, "projMatrix");
+    if (projUniformLocation == -1) {
+        std::cerr << "Could not bind projUniformLocation" << std::endl;
+    }
+    
     GLint aPositionLocation = glGetAttribLocation(program, "a_position");
     if (aPositionLocation == -1) {
         std::cerr << "Could not bind attribute a_position" << std::endl;
@@ -400,9 +408,10 @@ int main(int argc, const char** argv)
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
             
-            glm::mat4 mvp = Projection * View * Model;
-            
-            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            // glm::mat4 mvp = Projection * View * Model;
+            glm::mat4 mv = View * Model;
+            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
+            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             glBindBuffer(GL_ARRAY_BUFFER, triVertexBuffer);
             glVertexAttribPointer(
@@ -433,10 +442,9 @@ int main(int argc, const char** argv)
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            glm::mat4 mvp = Projection * View * Model;
-            
-            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-            
+            glm::mat4 mv = View * Model;
+            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
+            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             glBindBuffer(GL_ARRAY_BUFFER, cubeVertexBuffer);
             glVertexAttribPointer(
@@ -470,9 +478,9 @@ int main(int argc, const char** argv)
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            glm::mat4 mvp = Projection * View * Model;
-            
-            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            glm::mat4 mv = View * Model;
+            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
+            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, cubeTwoVertexBuffer);
@@ -507,9 +515,9 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
             Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
             
-            glm::mat4 mvp = Projection * View * Model;
-            
-            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            glm::mat4 mv = View * Model;
+            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
+            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
@@ -550,9 +558,9 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
             Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
             
-            glm::mat4 mvp = Projection * View * Model;
-            
-            glUniformMatrix4fv(mvpUniformLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+            glm::mat4 mv = View * Model;
+            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
+            glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
             
             
             glBindBuffer(GL_ARRAY_BUFFER, pyramidVertexBuffer);

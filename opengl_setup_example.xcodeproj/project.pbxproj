@@ -62,6 +62,8 @@
 		56664FCC294FC78600F138EA /* mars.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = mars.png; path = opengl_setup_example/textures/mars.png; sourceTree = "<group>"; };
 		56664FCD2950BA3600F138EA /* pyramid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = pyramid.cpp; sourceTree = "<group>"; };
 		56664FCE2950BA3600F138EA /* pyramid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pyramid.h; sourceTree = "<group>"; };
+		56664FD02950C39300F138EA /* phong_vertex_shader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = phong_vertex_shader.glsl; path = opengl_setup_example/phong_vertex_shader.glsl; sourceTree = "<group>"; };
+		56664FD12950C39C00F138EA /* phong_fragment_shader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = phong_fragment_shader.glsl; sourceTree = "<group>"; };
 		56BBA5912947C0F6005F8915 /* opengl_setup_example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = opengl_setup_example; sourceTree = BUILT_PRODUCTS_DIR; };
 		56BBA59C2947C3CF005F8915 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		56BBA59F2947C418005F8915 /* libglfw.3.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.3.dylib; path = ../../../opt/homebrew/Cellar/glfw/3.3.8/lib/libglfw.3.3.dylib; sourceTree = "<group>"; };
@@ -163,7 +165,9 @@
 			isa = PBXGroup;
 			children = (
 				56E9334729499DBD002A3B33 /* fragment_shader.glsl */,
+				56664FD12950C39C00F138EA /* phong_fragment_shader.glsl */,
 				56E9334829499DBD002A3B33 /* vertex_shader.glsl */,
+				56664FD02950C39300F138EA /* phong_vertex_shader.glsl */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
