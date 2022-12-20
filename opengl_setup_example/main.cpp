@@ -382,7 +382,11 @@ int main(int argc, const char** argv)
     const float kPyramidRotSpeed = 0.025;
     
     std::cout  << "starting main loop" << std::endl;
-    while( !glfwWindowShouldClose(window)) {
+    
+    bool rotating = true;
+    
+    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+           glfwWindowShouldClose(window) == 0 ) {
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -399,12 +403,21 @@ int main(int argc, const char** argv)
         glUniform3f(lightPositionID, lightPosition.x, lightPosition.y, lightPosition.z);
         
         
+        if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS) {
+            rotating = false;
+        } else {
+            rotating = true;
+        }
+        
+        
         if (1) { // Triangle
             glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
             triObj.mMat = Model;
             DrawObject(triObj, View, mUniformLocation, normMatUniformLocation);
-            triAngle += kTriRotSpeed;
+            
+            if(rotating)
+                triAngle += kTriRotSpeed;
         }
         if(1){ // Cube one
             
@@ -415,7 +428,8 @@ int main(int argc, const char** argv)
             cubeObj.mMat = Model;
             DrawObject(cubeObj, View, mUniformLocation, normMatUniformLocation);
             
-            cubeAngle += kCubeRotSpeed;
+            if(rotating)
+                cubeAngle += kCubeRotSpeed;
         }
         
         if(1)
@@ -441,7 +455,9 @@ int main(int argc, const char** argv)
             sphereObj.mMat = Model;
             DrawObject(sphereObj, View, mUniformLocation, normMatUniformLocation);
             
-            sphereAngle += kSphereRotSpeed;
+            
+            if(rotating)
+                sphereAngle += kSphereRotSpeed;
         }
         if(1)
         { // Pyramid
@@ -453,7 +469,8 @@ int main(int argc, const char** argv)
             pyramidObj.mMat = Model;
             DrawObject(pyramidObj, View, mUniformLocation, normMatUniformLocation);
 
-            pyramidAngle += kPyramidRotSpeed;
+            if(rotating)
+                pyramidAngle += kPyramidRotSpeed;
         }
         
         glDisableVertexAttribArray(0);
@@ -478,6 +495,20 @@ int main(int argc, const char** argv)
     if(checkersTextureImage) {
         delete checkersTextureImage;
     }
+    
+    // TODO: actually cleanup gl stuff properly
+    
+    
+    // TODO: for every object.
+    //    glDeleteBuffers(1, &vertexbuffer);
+    //    glDeleteBuffers(1, &uvbuffer);
+        
+    glDeleteProgram(program);
+    // TODO: for  every texture
+    // glDeleteTextures(1, &TextureID);
+    // TODO: for every vertex array
+    // glDeleteVertexArrays(1, &VertexArrayID);
+    
     
     glfwTerminate();
     std::cout << "GL setup exiting cleanly\n";
