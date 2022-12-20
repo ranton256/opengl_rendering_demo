@@ -27,7 +27,7 @@
 #include "pyramid.h"
 #include "mathutil.h"
 
-const char* kVertexShaderPath = "vertex_shader.glsl";
+const char* kVertexShaderPath = "phong_vertex_shader.glsl";
 const char* kFragmentShaderPath = "fragment_shader.glsl";
 
 const RGBColor red = {255, 0, 0};
@@ -86,7 +86,7 @@ struct ModelObject {
     std::vector<float> normals;
     glm::mat4 mv;
     bool isIndexed;
-    GLuint vertexBuffer, uvBuffer, indexBuffer;
+    GLuint vertexBuffer, uvBuffer, indexBuffer, normalBuffer;
     GLuint textureID;
 };
 
@@ -290,7 +290,6 @@ int main(int argc, const char** argv)
     triObj.textureID = marbleTextureID;
     
     
-    // TODO: TriangleObject is a terrible name.
     // CUBE
     ModelObject cubeObj;
     
@@ -334,12 +333,16 @@ int main(int argc, const char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, sphereObj.uvBuffer);
     glBufferData(GL_ARRAY_BUFFER, sphereObj.texCoords.size() * sizeof(float), sphereObj.texCoords.data(), GL_STATIC_DRAW);
     
-    // GLuint sphereIndexBuffer;
     glGenBuffers(1, &sphereObj.indexBuffer);
-    assert(sizeof(GLuint) == sizeof(int)); // TODO:
+    assert(sizeof(GLuint) == sizeof(int));
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereObj.indexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereObj.vertexIndexes.size() * sizeof(int), sphereObj.vertexIndexes.data(), GL_STATIC_DRAW);
     
+    glGenBuffers(1, &sphereObj.normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphereObj.normals.size() * sizeof(float), sphereObj.normals.data(), GL_STATIC_DRAW);
+
+                 
     sphereObj.isIndexed = true;
     
     sphereObj.textureID = marsTextureImageID;
