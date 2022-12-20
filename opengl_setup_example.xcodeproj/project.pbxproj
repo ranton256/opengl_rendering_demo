@@ -39,6 +39,7 @@
 
 /* Begin PBXFileReference section */
 		561B140F29514E1500480195 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../opt/homebrew/Cellar/libpng/1.6.37/lib/libpng16.16.dylib; sourceTree = "<group>"; };
+		561B14112952575F00480195 /* phong_fragment_shader.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; name = phong_fragment_shader.glsl; path = opengl_setup_example/phong_fragment_shader.glsl; sourceTree = "<group>"; };
 		56664FAB294F730100F138EA /* image_buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image_buffer.cpp; sourceTree = "<group>"; };
 		56664FAC294F730100F138EA /* image_buffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_buffer.h; sourceTree = "<group>"; };
 		56664FAE294F906900F138EA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -65,7 +66,6 @@
 		56664FCD2950BA3600F138EA /* pyramid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = pyramid.cpp; sourceTree = "<group>"; };
 		56664FCE2950BA3600F138EA /* pyramid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pyramid.h; sourceTree = "<group>"; };
 		56664FD02950C39300F138EA /* phong_vertex_shader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = phong_vertex_shader.glsl; path = opengl_setup_example/phong_vertex_shader.glsl; sourceTree = "<group>"; };
-		56664FD12950C39C00F138EA /* phong_fragment_shader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = phong_fragment_shader.glsl; sourceTree = "<group>"; };
 		56664FD22950C60100F138EA /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
 		56664FD32950C60100F138EA /* cube.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cube.h; sourceTree = "<group>"; };
 		56BBA5912947C0F6005F8915 /* opengl_setup_example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = opengl_setup_example; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -171,8 +171,8 @@
 		56E9334629499DA5002A3B33 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				561B14112952575F00480195 /* phong_fragment_shader.glsl */,
 				56E9334729499DBD002A3B33 /* fragment_shader.glsl */,
-				56664FD12950C39C00F138EA /* phong_fragment_shader.glsl */,
 				56E9334829499DBD002A3B33 /* vertex_shader.glsl */,
 				56664FD02950C39300F138EA /* phong_vertex_shader.glsl */,
 			);

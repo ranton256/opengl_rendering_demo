@@ -23,7 +23,7 @@ public:
   	// constructors
 	Vector3(void);
 	Vector3(double inX, double inY, double inZ);
-	Vector3(const Vector3& vec);
+    Vector3(const Vector3& vec);
     
     ~Vector3() = default;
     

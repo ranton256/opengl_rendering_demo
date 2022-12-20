@@ -28,7 +28,7 @@
 #include "mathutil.h"
 
 const char* kVertexShaderPath = "phong_vertex_shader.glsl";
-const char* kFragmentShaderPath = "fragment_shader.glsl";
+const char* kFragmentShaderPath = "phong_fragment_shader.glsl";
 
 const RGBColor red = {255, 0, 0};
 const RGBColor blue = {0, 0, 255};
@@ -84,15 +84,20 @@ struct ModelObject {
     std::vector<float> texCoords;
     std::vector<int> vertexIndexes;
     std::vector<float> normals;
-    glm::mat4 mv;
+    glm::mat4 mMat;
     bool isIndexed;
     GLuint vertexBuffer, uvBuffer, indexBuffer, normalBuffer;
     GLuint textureID;
 };
 
-static void DrawObject(GLuint mvUniformLocation, ModelObject& obj)
+static void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation)
 {
-    glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(obj.mv));
+    glUniformMatrix4fv(mMatUniformLocation, 1, GL_FALSE, glm::value_ptr(obj.mMat));
+    
+    auto mv = viewMat * obj.mMat;
+    glm::mat4 normMat = glm::transpose(glm::inverse(mv));
+    
+    glUniformMatrix4fv(normMatUniformLocation, 1, GL_FALSE, glm::value_ptr(normMat));
     
     glBindBuffer(GL_ARRAY_BUFFER, obj.vertexBuffer);
     glVertexAttribPointer(
@@ -105,12 +110,20 @@ static void DrawObject(GLuint mvUniformLocation, ModelObject& obj)
     );
 
     glBindBuffer(GL_ARRAY_BUFFER, obj.uvBuffer);
-    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
+    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray( 1 );
    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, obj.textureID);
    
+    if(obj.normals.size() > 0 ) {
+        glEnableVertexAttribArray( 2 );
+        glBindBuffer(GL_ARRAY_BUFFER, obj.normalBuffer);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    }
+    
+    
+    
     if(obj.isIndexed) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
         
@@ -123,6 +136,28 @@ static void DrawObject(GLuint mvUniformLocation, ModelObject& obj)
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)obj.vertexData.size());
     }
     
+}
+
+static void BindObjectBuffers(ModelObject &obj)
+{
+    glGenBuffers(1, &obj.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, obj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, obj.vertexData.size() * sizeof(float), obj.vertexData.data(), GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &obj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, obj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, obj.texCoords.size() * sizeof(float), obj.texCoords.data(), GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &obj.normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, obj.normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, obj.normals.size() * sizeof(float), obj.normals.data(), GL_STATIC_DRAW);
+    
+    if(obj.vertexIndexes.size() > 0) {
+        glGenBuffers(1, &obj.indexBuffer);
+        assert(sizeof(GLuint) == sizeof(int));
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj.vertexIndexes.size() * sizeof(int), obj.vertexIndexes.data(), GL_STATIC_DRAW);
+    }
 }
 
 static void MakeTriangle(ModelObject& triObj)
@@ -139,15 +174,10 @@ static void MakeTriangle(ModelObject& triObj)
     };
 
     triObj.vertexData.assign(triVertexBufferData, triVertexBufferData + sizeof(triVertexBufferData)/sizeof(float));
+    
+    GenerateNormals(triObj.vertexData, triObj.normals);
+    
     triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
-    
-    glGenBuffers(1, &triObj.vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, triObj.vertexData.size() * sizeof(float), triObj.vertexData.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &triObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, triObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, triObj.texCoords.size() * sizeof(float), triObj.texCoords.data(), GL_STATIC_DRAW);
 }
 
 int main(int argc, const char** argv)
@@ -224,19 +254,29 @@ int main(int argc, const char** argv)
 
     glm::mat4 Projection = glm::perspective(glm::radians(fovyInDegrees), aspectRatio, znear, zfar);
     
+    auto eyePosition = glm::vec3(0.0f, 0.0f, 3.0f);
     glm::mat4 View = glm::lookAt(
-        glm::vec3(0.0f, 0.0f, 3.0f), // position
+        eyePosition, // position
         glm::vec3(0.0f, 0.0f, 0.0f), // target
         glm::vec3(0.0f, 1.0f, 0.0f) //  up vector
         );
 
-    glm::mat4 Model = glm::mat4(1.0f);
-    Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
     
-    GLint mvUniformLocation = glGetUniformLocation(program, "mvMatrix");
-    if (mvUniformLocation == -1) {
-        std::cerr << "Could not bind mvUniformLocation" << std::endl;
+    GLint mUniformLocation = glGetUniformLocation(program, "modelMatrix");
+    if (mUniformLocation == -1) {
+        std::cerr << "Could not bind modelMatrix  location" << std::endl;
     }
+    
+    GLint vUniformLocation = glGetUniformLocation(program, "viewMatrix");
+    if (vUniformLocation == -1) {
+        std::cerr << "Could not bind viewMatrix  location" << std::endl;
+    }
+    
+    GLint normMatUniformLocation = glGetUniformLocation(program, "normMatrix");
+    if (normMatUniformLocation == -1) {
+        std::cerr << "Could not bind normMatrix location" << std::endl;
+    }
+    
     GLint projUniformLocation = glGetUniformLocation(program, "projMatrix");
     if (projUniformLocation == -1) {
         std::cerr << "Could not bind projUniformLocation" << std::endl;
@@ -245,6 +285,11 @@ int main(int argc, const char** argv)
     GLint aPositionLocation = glGetAttribLocation(program, "a_position");
     if (aPositionLocation == -1) {
         std::cerr << "Could not bind attribute a_position" << std::endl;
+    }
+    
+    GLint lightPositionID = glGetUniformLocation(program, "lightPosition");
+    if (lightPositionID == -1) {
+        std::cerr << "Could not bind lightPositionID location" << std::endl;
     }
     
     
@@ -286,6 +331,7 @@ int main(int argc, const char** argv)
     // Shapes
     ModelObject triObj;
     MakeTriangle(triObj);
+    BindObjectBuffers(triObj);
     
     triObj.textureID = marbleTextureID;
     
@@ -294,55 +340,23 @@ int main(int argc, const char** argv)
     ModelObject cubeObj;
     
     GenerateCube(cubeObj.vertexData, cubeObj.texCoords);
-    
-    glGenBuffers(1, &cubeObj.vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeObj.vertexData.size() * sizeof(float), cubeObj.vertexData.data(), GL_STATIC_DRAW);
- 
-    glGenBuffers(1, &cubeObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeObj.texCoords.size() * sizeof(float), cubeObj.texCoords.data(), GL_STATIC_DRAW);
+    GenerateNormals(cubeObj.vertexData, cubeObj.normals);
+    BindObjectBuffers(cubeObj);
     
     cubeObj.textureID = fbmTextureID;
     
     // CUBE TWO
     ModelObject cubeTwoObj;
     GenerateCube(cubeTwoObj.vertexData, cubeTwoObj.texCoords);
-    
-    glGenBuffers(1, &cubeTwoObj.vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeTwoObj.vertexData.size() * sizeof(float), cubeTwoObj.vertexData.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &cubeTwoObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeTwoObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, cubeTwoObj.texCoords.size() * sizeof(float), cubeTwoObj.texCoords.data(), GL_STATIC_DRAW);
+    GenerateNormals(cubeTwoObj.vertexData, cubeTwoObj.normals);
+    BindObjectBuffers(cubeTwoObj);
     
     cubeTwoObj.textureID = rockyTextureImageID;
-    
-    
-    
+        // SPHERE
     ModelObject sphereObj;
     GenerateSphere(1.5, 20, 25, sphereObj.vertexData, sphereObj.normals, sphereObj.texCoords, sphereObj.vertexIndexes);
+    BindObjectBuffers(sphereObj);
     
-    glGenBuffers(1, &sphereObj.vertexBuffer);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sphereObj.vertexData.size() * sizeof(float), sphereObj.vertexData.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &sphereObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sphereObj.texCoords.size() * sizeof(float), sphereObj.texCoords.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &sphereObj.indexBuffer);
-    assert(sizeof(GLuint) == sizeof(int));
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereObj.indexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereObj.vertexIndexes.size() * sizeof(int), sphereObj.vertexIndexes.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &sphereObj.normalBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.normalBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sphereObj.normals.size() * sizeof(float), sphereObj.normals.data(), GL_STATIC_DRAW);
-
-                 
     sphereObj.isIndexed = true;
     
     sphereObj.textureID = marsTextureImageID;
@@ -350,20 +364,14 @@ int main(int argc, const char** argv)
     // Pyramid
     ModelObject pyramidObj;
     GeneratePyramid(pyramidObj.vertexData, pyramidObj.texCoords);
-    
-    glGenBuffers(1, &pyramidObj.vertexBuffer);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, pyramidObj.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, pyramidObj.vertexData.size() * sizeof(float), pyramidObj.vertexData.data(), GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &pyramidObj.uvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, pyramidObj.uvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, pyramidObj.texCoords.size() * sizeof(float), pyramidObj.texCoords.data(), GL_STATIC_DRAW);
-    
+    GenerateNormals(pyramidObj.vertexData, pyramidObj.normals);
+    BindObjectBuffers(pyramidObj);
+
     pyramidObj.textureID = checkersTextureID;
     
-    
-    
+    auto lightPosition = glm::vec3 {-5, 5, 0};
+
+    // Rotation angles and speeds
     float triAngle = 0.0f;
     float cubeAngle = 0.0f;
     float sphereAngle = 0.0f;
@@ -382,14 +390,20 @@ int main(int argc, const char** argv)
         
         glEnableVertexAttribArray(aPositionLocation);
         
+        
+        // NOTE: These don't actually change each time through loop currently.
         glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
+        glUniformMatrix4fv(vUniformLocation, 1, GL_FALSE, glm::value_ptr(View));
+        
+        
+        glUniform3f(lightPositionID, lightPosition.x, lightPosition.y, lightPosition.z);
         
         
         if (1) { // Triangle
             glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
-            triObj.mv = View * Model;
-            DrawObject(mvUniformLocation, triObj);
+            triObj.mMat = Model;
+            DrawObject(triObj, View, mUniformLocation, normMatUniformLocation);
             triAngle += kTriRotSpeed;
         }
         if(1){ // Cube one
@@ -398,8 +412,8 @@ int main(int argc, const char** argv)
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            cubeObj.mv = View * Model;
-            DrawObject(mvUniformLocation, cubeObj);
+            cubeObj.mMat = Model;
+            DrawObject(cubeObj, View, mUniformLocation, normMatUniformLocation);
             
             cubeAngle += kCubeRotSpeed;
         }
@@ -411,8 +425,8 @@ int main(int argc, const char** argv)
             Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
             Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            cubeTwoObj.mv = View * Model;
-            DrawObject(mvUniformLocation, cubeTwoObj);
+            cubeTwoObj.mMat = Model;
+            DrawObject(cubeTwoObj, View, mUniformLocation, normMatUniformLocation);
             
             // cubeAngle += kCubeRotSpeed;
         }
@@ -424,8 +438,8 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
             Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
             
-            sphereObj.mv = View * Model;
-            DrawObject(mvUniformLocation, sphereObj);
+            sphereObj.mMat = Model;
+            DrawObject(sphereObj, View, mUniformLocation, normMatUniformLocation);
             
             sphereAngle += kSphereRotSpeed;
         }
@@ -436,8 +450,8 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
             Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
             
-            pyramidObj.mv = View * Model;
-            DrawObject(mvUniformLocation, pyramidObj);
+            pyramidObj.mMat = Model;
+            DrawObject(pyramidObj, View, mUniformLocation, normMatUniformLocation);
 
             pyramidAngle += kPyramidRotSpeed;
         }

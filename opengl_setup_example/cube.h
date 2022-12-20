@@ -11,5 +11,6 @@
 #include <vector>
 
 void GenerateCube(std::vector<float>& vertices, std::vector<float>& texCoords);
+void GenerateNormals(const std::vector<float>& vertices, std::vector<float>& normals);
 
 #endif /* cube_hpp */
