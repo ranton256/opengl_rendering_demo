@@ -79,17 +79,18 @@ static RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
     return new RGBImageBuffer(pixels, width, height, width*3, 3);
 }
 
-// TODO: rename this.
-struct TriangleObject {
+struct ModelObject {
     std::vector<float> vertexData;
     std::vector<float> texCoords;
-    // TODO: normals
+    std::vector<int> vertexIndexes;
+    std::vector<float> normals;
     glm::mat4 mv;
-    GLuint vertexBuffer, uvBuffer;
+    bool isIndexed;
+    GLuint vertexBuffer, uvBuffer, indexBuffer;
     GLuint textureID;
 };
 
-static void DrawObject(GLuint mvUniformLocation, TriangleObject& obj)
+static void DrawObject(GLuint mvUniformLocation, ModelObject& obj)
 {
     glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(obj.mv));
     
@@ -109,12 +110,22 @@ static void DrawObject(GLuint mvUniformLocation, TriangleObject& obj)
    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, obj.textureID);
-    
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)obj.vertexData.size());
+   
+    if(obj.isIndexed) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
+        
+        glDrawElements(GL_TRIANGLES,                    // primitive type
+                       (GLsizei)obj.vertexIndexes.size(),   // # of indices
+                       GL_UNSIGNED_INT,                 // data type
+                       (void*)0);                       // offset to indices
+
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)obj.vertexData.size());
+    }
     
 }
 
-static void MakeTriangle(TriangleObject& triObj)
+static void MakeTriangle(ModelObject& triObj)
 {
     static const float triVertexBufferData[] = {
        -1.0f, -1.0f, 0.0f,
@@ -137,8 +148,6 @@ static void MakeTriangle(TriangleObject& triObj)
     glGenBuffers(1, &triObj.uvBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, triObj.uvBuffer);
     glBufferData(GL_ARRAY_BUFFER, triObj.texCoords.size() * sizeof(float), triObj.texCoords.data(), GL_STATIC_DRAW);
-    
-    
 }
 
 int main(int argc, const char** argv)
@@ -275,7 +284,7 @@ int main(int argc, const char** argv)
     
     
     // Shapes
-    TriangleObject triObj;
+    ModelObject triObj;
     MakeTriangle(triObj);
     
     triObj.textureID = marbleTextureID;
@@ -283,7 +292,7 @@ int main(int argc, const char** argv)
     
     // TODO: TriangleObject is a terrible name.
     // CUBE
-    TriangleObject cubeObj;
+    ModelObject cubeObj;
     
     GenerateCube(cubeObj.vertexData, cubeObj.texCoords);
     
@@ -297,10 +306,8 @@ int main(int argc, const char** argv)
     
     cubeObj.textureID = fbmTextureID;
     
-    // TODO: refactor these things out.
-    
     // CUBE TWO
-    TriangleObject cubeTwoObj;
+    ModelObject cubeTwoObj;
     GenerateCube(cubeTwoObj.vertexData, cubeTwoObj.texCoords);
     
     glGenBuffers(1, &cubeTwoObj.vertexBuffer);
@@ -315,34 +322,30 @@ int main(int argc, const char** argv)
     
     
     
+    ModelObject sphereObj;
+    GenerateSphere(1.5, 20, 25, sphereObj.vertexData, sphereObj.normals, sphereObj.texCoords, sphereObj.vertexIndexes);
     
-    std::vector<float> sphereVertices, sphereNormals, sphereUVData;
-    std::vector<int> sphereIndices;
-    GenerateSphere(1.5, 10, 12, sphereVertices, sphereNormals, sphereUVData, sphereIndices);
+    glGenBuffers(1, &sphereObj.vertexBuffer);
     
-    GLuint sphereVertexBuffer;
-    glGenBuffers(1, &sphereVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphereObj.vertexData.size() * sizeof(float), sphereObj.vertexData.data(), GL_STATIC_DRAW);
     
-    glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sphereVertices.size() * sizeof(float), sphereVertices.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &sphereObj.uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sphereObj.uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphereObj.texCoords.size() * sizeof(float), sphereObj.texCoords.data(), GL_STATIC_DRAW);
     
-    GLuint sphereUVBuffer;
-    glGenBuffers(1, &sphereUVBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, sphereUVBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sphereUVData.size() * sizeof(float), sphereUVData.data(), GL_STATIC_DRAW);
-    
-    GLuint sphereIndexBuffer;
-    glGenBuffers(1, &sphereIndexBuffer);
+    // GLuint sphereIndexBuffer;
+    glGenBuffers(1, &sphereObj.indexBuffer);
     assert(sizeof(GLuint) == sizeof(int)); // TODO:
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereIndices.size() * sizeof(int), sphereIndices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereObj.indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphereObj.vertexIndexes.size() * sizeof(int), sphereObj.vertexIndexes.data(), GL_STATIC_DRAW);
     
+    sphereObj.isIndexed = true;
     
-    
-    
+    sphereObj.textureID = marsTextureImageID;
     
     // Pyramid
-    TriangleObject pyramidObj;
+    ModelObject pyramidObj;
     GeneratePyramid(pyramidObj.vertexData, pyramidObj.texCoords);
     
     glGenBuffers(1, &pyramidObj.vertexBuffer);
@@ -418,36 +421,8 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
             Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
             
-            glm::mat4 mv = View * Model;
-            glUniformMatrix4fv(mvUniformLocation, 1, GL_FALSE, glm::value_ptr(mv));
-            
-            
-            glBindBuffer(GL_ARRAY_BUFFER, sphereVertexBuffer);
-            glVertexAttribPointer(
-               0,
-               3,
-               GL_FLOAT,
-               GL_FALSE,
-               0,
-               (void*)0
-            );
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereIndexBuffer);
-            
-            
-            glBindBuffer(GL_ARRAY_BUFFER, sphereUVBuffer);
-            
-            glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL );
-            glEnableVertexAttribArray( 1 );
-           
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, marsTextureImageID);
-            
-            glDrawElements(GL_TRIANGLES,                    // primitive type
-                           (GLsizei)sphereIndices.size(),          // # of indices
-                           GL_UNSIGNED_INT,                 // data type
-                           (void*)0);                       // offset to indices
-
-            
+            sphereObj.mv = View * Model;
+            DrawObject(mvUniformLocation, sphereObj);
             
             sphereAngle += kSphereRotSpeed;
         }
