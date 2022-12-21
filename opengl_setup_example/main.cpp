@@ -8,10 +8,7 @@
 #include <iostream>
 #include <vector>
 
-
-// CODE_SIGN_IDENTITY gets set to '-' this refuses to launch...
-
-// Defined before OpenGL and GLUT includes to avoid deprecation messages
+// Define before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
 
 #include <GL/glew.h>
@@ -20,8 +17,8 @@
 #include <glm/ext.hpp>
 
 #include "shaders.h"
+#include "textures.h"
 #include "proc_textures.h"
-#include "pngreader.h"
 #include "cube.h"
 #include "sphere.h"
 #include "pyramid.h"
@@ -41,44 +38,10 @@ const RGBColor orange = {232, 99, 10};
 static bool RunTests(void)
 {
     bool good = true;
-    
     good = good && TestGenerateCheckers();
-    
     return good;
 }
 
-static GLuint CreateTextureFromImage(RGBImageBuffer* imageBuffer)
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    // Give the image to OpenGL
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB,
-                 imageBuffer->Width(), imageBuffer->Height(),
-                 0,
-                 GL_RGB,
-                 GL_UNSIGNED_BYTE, imageBuffer->Pixels());
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    
-    return textureID;
-}
-
-static RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
-{
-    uint32_t width, height;
-    uint8_t *pixels = nullptr;
-    
-    if(!ReadPNGImage(path, &pixels, &width, &height)) {
-        std::cerr << "Error loading image from " << path << std::endl;
-        return nullptr;
-    }
-    
-    return new RGBImageBuffer(pixels, width, height, width*3, 3);
-}
 
 struct ModelObject {
     std::vector<float> vertexData;
@@ -110,10 +73,15 @@ static void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformL
        (void*)0
     );
 
-    glBindBuffer(GL_ARRAY_BUFFER, obj.uvBuffer);
-    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray( 1 );
-   
+    
+    if(obj.texCoords.empty()) {
+        std::cerr << "Missing object texture coordinates" << std::endl;
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, obj.uvBuffer);
+        glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray( 1 );
+    }
+    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, obj.textureID);
    
@@ -123,9 +91,11 @@ static void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformL
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     }
     
-    
-    
     if(obj.isIndexed) {
+        if(obj.vertexIndexes.empty()) {
+            std::cerr << "Missing object vertex indexes" << std::endl;
+            return;
+        }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
         
         glDrawElements(GL_TRIANGLES,                    // primitive type
@@ -181,65 +151,6 @@ static void MakeTriangle(ModelObject& triObj)
     triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
 }
 
-static void AutoMapUV(TriangleMesh &mesh, ModelObject &obj) {
-    double minX = mesh.GetVertices().front().x;
-    double minY = mesh.GetVertices().front().y;
-    double minZ = mesh.GetVertices().front().z;
-    double maxX = minX;
-    double maxY = minY;
-    double maxZ = minZ;
-    
-    // find min/max of model in each direction.
-    for(auto vtx : mesh.GetVertices()) {
-        if(vtx.x < minX)
-            minX = vtx.x;
-        if(vtx.y < minY)
-            minY = vtx.y;
-        if(vtx.z < minZ)
-            minZ = vtx.z;
-        
-        if(vtx.x > maxX)
-            maxX = vtx.x;
-        if(vtx.y > maxY)
-            maxY = vtx.y;
-        if(vtx.z > maxZ)
-            maxZ = vtx.z;
-    }
-    
-    constexpr double kMinRange = 0.00001;
-    double rangeX = TMax(maxX - minX, kMinRange);
-    double rangeY = TMax(maxY - minY, kMinRange);
-    double rangeZ = TMax(maxZ - minZ, kMinRange);
-    
-    int uIdx, vIdx;
-    // ignore the one with the smallest range.
-    if(rangeX <= rangeY && rangeX <= rangeZ) {
-        // discard X
-        uIdx = 1;
-        vIdx = 2;
-    } else if(rangeY <= rangeX && rangeY <= rangeZ) {
-        // discard Y
-        uIdx = 0;
-        vIdx = 2;
-    } else {
-        // discard Z
-        uIdx = 0;
-        vIdx = 1;
-    }
-    
-    for(auto vtx : mesh.GetVertices()) {
-        float uvw[3];
-        uvw[0] = (vtx.x - minX) / rangeX;
-        uvw[1] = (vtx.y - minY) / rangeY;
-        uvw[2] = (vtx.z - minZ) / rangeZ;
-        
-        float u = uvw[uIdx];
-        float v = uvw[vIdx];
-        
-        obj.texCoords.push_back(u);
-        obj.texCoords.push_back(v);
-    }
-}
 
 static void MakeMeshObject(TriangleMesh& mesh, ModelObject& obj)
 {
@@ -266,13 +177,7 @@ static void MakeMeshObject(TriangleMesh& mesh, ModelObject& obj)
     }
     obj.isIndexed = true;
     
-    
-    // triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
-    
-    // TODO split all this out
-    
-    AutoMapUV(mesh, obj);
-    
+    AutoMapUV(mesh, obj.texCoords);
 }
 
 int main(int argc, const char** argv)
@@ -437,7 +342,11 @@ int main(int argc, const char** argv)
     
     
     // Shapes
-    ModelObject triObj;
+    std::vector<ModelObject> objects;
+    
+    objects.push_back(ModelObject());
+    ModelObject& triObj(objects.back());
+    
     MakeTriangle(triObj);
     BindObjectBuffers(triObj);
     

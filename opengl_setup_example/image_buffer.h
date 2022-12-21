@@ -40,7 +40,7 @@ public:
     u_int8_t* Pixels(void) { return mPixels; }
 };
 
-
+RGBImageBuffer* LoadImageBufferFromPNG(const char* path);
 
 
 #endif /* img_loader_hpp */

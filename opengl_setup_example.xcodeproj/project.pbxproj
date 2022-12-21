@@ -19,6 +19,7 @@
 		561B14372952887300480195 /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561B142C2952887300480195 /* scene.cpp */; };
 		561B14382952887300480195 /* surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561B142D2952887300480195 /* surface.cpp */; };
 		561B14392952887300480195 /* shadinginfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561B142E2952887300480195 /* shadinginfo.cpp */; };
+		5640D5772953609A00745D29 /* textures.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5640D5752953609A00745D29 /* textures.cpp */; };
 		56664FAD294F730100F138EA /* image_buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FAB294F730100F138EA /* image_buffer.cpp */; };
 		56664FB1294F93AA00F138EA /* proc_textures.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FAF294F93AA00F138EA /* proc_textures.cpp */; };
 		56664FB7294FAAE600F138EA /* vector3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FB3294FAAE600F138EA /* vector3.cpp */; };
@@ -71,6 +72,8 @@
 		561B14312952887300480195 /* shadinginfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = shadinginfo.h; sourceTree = "<group>"; };
 		561B14322952887300480195 /* ray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ray.h; sourceTree = "<group>"; };
 		561B14332952887300480195 /* surface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = surface.h; sourceTree = "<group>"; };
+		5640D5752953609A00745D29 /* textures.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textures.cpp; sourceTree = "<group>"; };
+		5640D5762953609A00745D29 /* textures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = textures.h; sourceTree = "<group>"; };
 		56664FAB294F730100F138EA /* image_buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image_buffer.cpp; sourceTree = "<group>"; };
 		56664FAC294F730100F138EA /* image_buffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_buffer.h; sourceTree = "<group>"; };
 		56664FAE294F906900F138EA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.markdown; };
@@ -204,6 +207,8 @@
 				561B14222952880B00480195 /* triangles.h */,
 				56664FB3294FAAE600F138EA /* vector3.cpp */,
 				56664FB4294FAAE600F138EA /* vector3.h */,
+				5640D5752953609A00745D29 /* textures.cpp */,
+				5640D5762953609A00745D29 /* textures.h */,
 			);
 			path = opengl_setup_example;
 			sourceTree = "<group>";
@@ -301,6 +306,7 @@
 				561B14252952880B00480195 /* triangles.cpp in Sources */,
 				561B14382952887300480195 /* surface.cpp in Sources */,
 				56664FBC294FAB1E00F138EA /* matrix.cpp in Sources */,
+				5640D5772953609A00745D29 /* textures.cpp in Sources */,
 				56664FB1294F93AA00F138EA /* proc_textures.cpp in Sources */,
 				56664FD42950C60100F138EA /* cube.cpp in Sources */,
 				56E933422949907A002A3B33 /* main.cpp in Sources */,
@@ -454,7 +460,6 @@
 					/opt/homebrew/Cellar/glfw/3.3.8/lib,
 					/opt/homebrew/Cellar/glbinding/2.1.4/lib,
 					/opt/homebrew/Cellar/libpng/1.6.39/lib,
-					/opt/homebrew/Cellar/libpng/1.6.37/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -475,7 +480,6 @@
 					/opt/homebrew/Cellar/glfw/3.3.8/lib,
 					/opt/homebrew/Cellar/glbinding/2.1.4/lib,
 					/opt/homebrew/Cellar/libpng/1.6.39/lib,
-					/opt/homebrew/Cellar/libpng/1.6.37/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";

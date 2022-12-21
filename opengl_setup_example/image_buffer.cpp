@@ -6,8 +6,10 @@
 //
 
 #include "image_buffer.h"
+#include "pngreader.h"
 
 #include <cassert>
+#include <iostream>
 
 
 RGBImageBuffer::RGBImageBuffer()
@@ -77,3 +79,15 @@ void RGBImageBuffer::SetSize(u_int32_t width, u_int32_t height, u_int16_t channe
     }
 }
 
+RGBImageBuffer* LoadImageBufferFromPNG(const char* path)
+{
+    uint32_t width, height;
+    uint8_t *pixels = nullptr;
+    
+    if(!ReadPNGImage(path, &pixels, &width, &height)) {
+        std::cerr << "Error loading image from " << path << std::endl;
+        return nullptr;
+    }
+    
+    return new RGBImageBuffer(pixels, width, height, width*3, 3);
+}
