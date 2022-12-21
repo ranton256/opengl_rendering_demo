@@ -159,11 +159,6 @@ int main(int argc, const char** argv)
         std::cerr << "Could not bind lightPositionID location" << std::endl;
     }
     
-    
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -467,21 +462,21 @@ int main(int argc, const char** argv)
         delete redBlackCheckersImage;
     }
     
-    // TODO: actually cleanup gl stuff properly
+    //  Cleanup GL stuff
     
-    
-    // TODO: for every object.
-    //    glDeleteBuffers(1, &vertexbuffer);
-    //    glDeleteBuffers(1, &uvbuffer);
-        
     glDeleteProgram(program);
     // TODO: for  every texture
     // glDeleteTextures(1, &TextureID);
-    // TODO: for every vertex array
-    // glDeleteVertexArrays(1, &VertexArrayID);
     
-    for(auto& modelObj : objects) {
-        // TODO: delete GL stuff for object.
+    glDeleteVertexArrays(1, &VertexArrayID);
+    
+    for(const auto& modelObj : objects) {
+        glDeleteBuffers(1, &modelObj->vertexBuffer);
+        glDeleteBuffers(1, &modelObj->uvBuffer);
+        glDeleteBuffers(1, &modelObj->normalBuffer);
+        if(modelObj->isIndexed) {
+            glDeleteBuffers(1, &modelObj->indexBuffer);
+        }
     }
     
     glfwTerminate();
