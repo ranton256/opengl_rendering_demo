@@ -21,7 +21,9 @@
 
 #include "trianglemesh.h"
 
-struct ModelObject {
+class ModelObject {
+    
+public:
     std::vector<float> vertexData;
     std::vector<float> texCoords;
     std::vector<int> vertexIndexes;
@@ -30,6 +32,10 @@ struct ModelObject {
     bool isIndexed;
     GLuint vertexBuffer, uvBuffer, indexBuffer, normalBuffer;
     GLuint textureID;
+    
+    ModelObject() = default;
+    ModelObject(const ModelObject& obj) = default;
+    ~ModelObject() = default;
 };
 
 

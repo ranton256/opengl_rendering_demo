@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
+#include <memory>
 
 // Define before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
@@ -206,89 +208,107 @@ int main(int argc, const char** argv)
     
     
     // Shapes
-    std::vector<ModelObject> objects;
+    std::list<std::unique_ptr<ModelObject>> objects;
     
-    objects.push_back(ModelObject());
-    ModelObject& triObj(objects.back());
-    
-    MakeTriangle(triObj);
-    BindObjectBuffers(triObj);
-    
-    triObj.textureID = marbleTextureID;
-    
+    // Triangle
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* triObjPtr = objects.back().get();
+    {
+        MakeTriangle(*triObjPtr);
+        BindObjectBuffers(*triObjPtr);
+        
+        triObjPtr->textureID = marbleTextureID;
+    }
     
     // CUBE
-    ModelObject cubeObj;
-    
-    GenerateCube(cubeObj.vertexData, cubeObj.texCoords);
-    GenerateNormals(cubeObj.vertexData, cubeObj.normals);
-    BindObjectBuffers(cubeObj);
-    
-    cubeObj.textureID = fbmTextureID;
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* cubeObjPtr = objects.back().get();
+    {
+        
+        GenerateCube(cubeObjPtr->vertexData, cubeObjPtr->texCoords);
+        GenerateNormals(cubeObjPtr->vertexData, cubeObjPtr->normals);
+        BindObjectBuffers(*cubeObjPtr);
+        
+        cubeObjPtr->textureID = fbmTextureID;
+    }
     
     // CUBE TWO
-    ModelObject cubeTwoObj;
-    GenerateCube(cubeTwoObj.vertexData, cubeTwoObj.texCoords);
-    GenerateNormals(cubeTwoObj.vertexData, cubeTwoObj.normals);
-    BindObjectBuffers(cubeTwoObj);
-    
-    cubeTwoObj.textureID = rockyTextureImageID;
-        // SPHERE
-    ModelObject sphereObj;
-    GenerateSphere(1.5, 20, 25, sphereObj.vertexData, sphereObj.normals, sphereObj.texCoords, sphereObj.vertexIndexes);
-    BindObjectBuffers(sphereObj);
-    
-    sphereObj.isIndexed = true;
-    
-    sphereObj.textureID = marsTextureImageID;
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* cubeTwoObjPtr = objects.back().get();
+    {
+        GenerateCube(cubeTwoObjPtr->vertexData, cubeTwoObjPtr->texCoords);
+        GenerateNormals(cubeTwoObjPtr->vertexData, cubeTwoObjPtr->normals);
+        BindObjectBuffers(*cubeTwoObjPtr);
+        
+        cubeTwoObjPtr->textureID = rockyTextureImageID;
+    }
+        
+    // SPHERE
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* sphereObjPtr = objects.back().get();
+    {
+        GenerateSphere(1.5, 20, 25, sphereObjPtr->vertexData, sphereObjPtr->normals, sphereObjPtr->texCoords, sphereObjPtr->vertexIndexes);
+        BindObjectBuffers(*sphereObjPtr);
+        
+        sphereObjPtr->isIndexed = true;
+        
+        sphereObjPtr->textureID = marsTextureImageID;
+    }
     
     // Pyramid
-    ModelObject pyramidObj;
-    GeneratePyramid(pyramidObj.vertexData, pyramidObj.texCoords);
-    GenerateNormals(pyramidObj.vertexData, pyramidObj.normals);
-    BindObjectBuffers(pyramidObj);
-
-    pyramidObj.textureID = blueGreenCheckersTextureID;
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* pyramidObjPtr = objects.back().get();
+    {
+        GeneratePyramid(pyramidObjPtr->vertexData, pyramidObjPtr->texCoords);
+        GenerateNormals(pyramidObjPtr->vertexData, pyramidObjPtr->normals);
+        BindObjectBuffers(*pyramidObjPtr);
+        
+        pyramidObjPtr->textureID = blueGreenCheckersTextureID;
+    }
     
     // Triangle mesh loaded from SMF file.
-    TriangleMesh mesh;
-    ModelObject meshObj;
-    const char* meshPath = "mesh/bound-bunny_200.smf";
-    if(!mesh.LoadFromSMF(meshPath)) {
-        std::cerr << "Error loading mesh from " << meshPath << std::endl;
-        
-    } else {
-        
-        mesh.CalcNormals();
-        
-       
-        MakeMeshObject(mesh, meshObj);
-        
-        BindObjectBuffers(meshObj);
-        
-        // todo: use a better texture.
-        meshObj.textureID = redBlackCheckersTextureID;
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* meshObjPtr = objects.back().get();
+    {
+        // TODO: refactor mesh loading into a function.
+        TriangleMesh mesh;
+        const char* meshPath = "mesh/bound-bunny_200.smf";
+        if(!mesh.LoadFromSMF(meshPath)) {
+            std::cerr << "Error loading mesh from " << meshPath << std::endl;
+            
+        } else {
+            
+            mesh.CalcNormals();
+            MakeMeshObject(mesh, *meshObjPtr);
+            BindObjectBuffers(*meshObjPtr);
+            
+            // todo: use a better texture.
+            meshObjPtr->textureID = redBlackCheckersTextureID;
+        }
     }
     
     // Second mesh
-    TriangleMesh meshTwo;
-    ModelObject meshTwoObj;
-    const char* meshTwoPath = "mesh/teddy.smf";
-    if(!meshTwo.LoadFromSMF(meshTwoPath)) {
-        std::cerr << "Error loading mesh from " << meshPath << std::endl;
+    objects.push_back(std::make_unique<ModelObject>());
+    ModelObject* meshTwoObjPtr = objects.back().get();
+    {
+        TriangleMesh meshTwo;
         
-    } else {
-        
-        meshTwo.CalcNormals();
-        
-        MakeMeshObject(meshTwo, meshTwoObj);
-        
-        BindObjectBuffers(meshTwoObj);
-        
-        // todo: use a better texture.
-        meshTwoObj.textureID = fuzzyTextureID;
+        const char* meshTwoPath = "mesh/teddy.smf";
+        if(!meshTwo.LoadFromSMF(meshTwoPath)) {
+            std::cerr << "Error loading mesh from " << meshTwoPath << std::endl;
+            
+        } else {
+            
+            meshTwo.CalcNormals();
+            
+            MakeMeshObject(meshTwo, *meshTwoObjPtr);
+            
+            BindObjectBuffers(*meshTwoObjPtr);
+            
+            // todo: use a better texture.
+            meshTwoObjPtr->textureID = fuzzyTextureID;
+        }
     }
-    
     
     auto lightPosition = glm::vec3 {-5, 5, 0};
 
@@ -333,25 +353,26 @@ int main(int argc, const char** argv)
             rotating = true;
         }
         
-        
         if (1) { // Triangle
-            glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
-            Model = glm::rotate(Model, triAngle, glm::vec3(0, 0.2, 1));
-            triObj.mMat = Model;
-            DrawObject(triObj, View, mUniformLocation, normMatUniformLocation);
+            glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
+            model = glm::rotate(model, triAngle, glm::vec3(0, 0.2, 1));
+            triObjPtr->mMat = model;
             
             if(rotating)
                 triAngle += kTriRotSpeed;
         }
+        
+        for(auto& modelObj : objects) {
+            DrawObject(*modelObj, View, mUniformLocation, normMatUniformLocation);
+        }
+
         if(1){ // Cube one
             
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5, 0, -4));
-            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
-            Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5, 0, -4));
+            model = glm::scale(model, glm::vec3(0.6f, 0.5f, 0.5f));
+            model = glm::rotate(model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            cubeObj.mMat = Model;
-            DrawObject(cubeObj, View, mUniformLocation, normMatUniformLocation);
-            
+            cubeObjPtr->mMat = model;
             if(rotating)
                 cubeAngle += kCubeRotSpeed;
         }
@@ -359,15 +380,13 @@ int main(int argc, const char** argv)
         if(1)
         { // Cube two
             
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5, 0, -4));
-            Model = glm::scale(Model, glm::vec3(0.6f, 0.5f, 0.5f));
-            Model = glm::rotate(Model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5, 0, -4));
+            model = glm::scale(model, glm::vec3(0.6f, 0.5f, 0.5f));
+            model = glm::rotate(model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
             
-            cubeTwoObj.mMat = Model;
-            DrawObject(cubeTwoObj, View, mUniformLocation, normMatUniformLocation);
-            
-            // cubeAngle += kCubeRotSpeed;
+            cubeTwoObjPtr->mMat = model;
         }
+        
         if(1)
         { // Sphere
             
@@ -376,9 +395,7 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
             Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
             
-            sphereObj.mMat = Model;
-            DrawObject(sphereObj, View, mUniformLocation, normMatUniformLocation);
-            
+            sphereObjPtr->mMat = Model;
             
             if(rotating)
                 sphereAngle += kSphereRotSpeed;
@@ -390,9 +407,8 @@ int main(int argc, const char** argv)
             Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
             Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
             
-            pyramidObj.mMat = Model;
-            DrawObject(pyramidObj, View, mUniformLocation, normMatUniformLocation);
-
+            pyramidObjPtr->mMat = Model;
+            
             if(rotating)
                 pyramidAngle += kPyramidRotSpeed;
         }
@@ -405,9 +421,8 @@ int main(int argc, const char** argv)
             Model  = glm::scale(Model, glm::vec3(1.5, 1.5, 1.8));
             Model = glm::rotate(Model, meshAngle, glm::vec3(0, 1, 0));
             
-            meshObj.mMat = Model;
-            DrawObject(meshObj, View, mUniformLocation, normMatUniformLocation);
-
+            meshObjPtr->mMat = Model;
+            
             if(rotating)
                 meshAngle += kMeshRotSpeed;
         }
@@ -420,11 +435,7 @@ int main(int argc, const char** argv)
             Model  = glm::scale(Model, glm::vec3(0.05, 0.05, 0.05));
             Model = glm::rotate(Model, meshAngle, glm::vec3(1, 0, 0));
             
-            meshTwoObj.mMat = Model;
-            DrawObject(meshTwoObj, View, mUniformLocation, normMatUniformLocation);
-
-//            if(rotating)
-//                meshAngle += kMeshRotSpeed;
+            meshTwoObjPtr->mMat = Model;
         }
         
         glDisableVertexAttribArray(0);
@@ -469,6 +480,9 @@ int main(int argc, const char** argv)
     // TODO: for every vertex array
     // glDeleteVertexArrays(1, &VertexArrayID);
     
+    for(auto& modelObj : objects) {
+        // TODO: delete GL stuff for object.
+    }
     
     glfwTerminate();
     std::cout << "GL setup exiting cleanly\n";
