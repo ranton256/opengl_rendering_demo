@@ -20,6 +20,7 @@
 		561B14382952887300480195 /* surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561B142D2952887300480195 /* surface.cpp */; };
 		561B14392952887300480195 /* shadinginfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 561B142E2952887300480195 /* shadinginfo.cpp */; };
 		5640D5772953609A00745D29 /* textures.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5640D5752953609A00745D29 /* textures.cpp */; };
+		5640D57A2953639E00745D29 /* model_object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5640D5782953639E00745D29 /* model_object.cpp */; };
 		56664FAD294F730100F138EA /* image_buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FAB294F730100F138EA /* image_buffer.cpp */; };
 		56664FB1294F93AA00F138EA /* proc_textures.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FAF294F93AA00F138EA /* proc_textures.cpp */; };
 		56664FB7294FAAE600F138EA /* vector3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 56664FB3294FAAE600F138EA /* vector3.cpp */; };
@@ -74,6 +75,8 @@
 		561B14332952887300480195 /* surface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = surface.h; sourceTree = "<group>"; };
 		5640D5752953609A00745D29 /* textures.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textures.cpp; sourceTree = "<group>"; };
 		5640D5762953609A00745D29 /* textures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = textures.h; sourceTree = "<group>"; };
+		5640D5782953639E00745D29 /* model_object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = model_object.cpp; sourceTree = "<group>"; };
+		5640D5792953639E00745D29 /* model_object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = model_object.h; sourceTree = "<group>"; };
 		56664FAB294F730100F138EA /* image_buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image_buffer.cpp; sourceTree = "<group>"; };
 		56664FAC294F730100F138EA /* image_buffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_buffer.h; sourceTree = "<group>"; };
 		56664FAE294F906900F138EA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.markdown; };
@@ -175,6 +178,8 @@
 				561B14292952887300480195 /* light.cpp */,
 				561B14302952887300480195 /* light.h */,
 				56E9333F2949907A002A3B33 /* main.cpp */,
+				5640D5782953639E00745D29 /* model_object.cpp */,
+				5640D5792953639E00745D29 /* model_object.h */,
 				56664FBA294FAB1E00F138EA /* mathutil.h */,
 				56664FBB294FAB1E00F138EA /* matrix.cpp */,
 				56664FB9294FAB1E00F138EA /* matrix.h */,
@@ -309,6 +314,7 @@
 				5640D5772953609A00745D29 /* textures.cpp in Sources */,
 				56664FB1294F93AA00F138EA /* proc_textures.cpp in Sources */,
 				56664FD42950C60100F138EA /* cube.cpp in Sources */,
+				5640D57A2953639E00745D29 /* model_object.cpp in Sources */,
 				56E933422949907A002A3B33 /* main.cpp in Sources */,
 				561B14392952887300480195 /* shadinginfo.cpp in Sources */,
 				561B14362952887300480195 /* camera.cpp in Sources */,
