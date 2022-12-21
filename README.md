@@ -6,6 +6,11 @@ These instructions and sample code are for setting up OpenGL on Mac in Xcode as 
 
 They use glew and glfw3 and also glm. And libpng for loading textures.
 
+
+## Screenshot
+
+![Screenshot](screenshot.png)
+
 ## Dependencies
 
 - glfw3
