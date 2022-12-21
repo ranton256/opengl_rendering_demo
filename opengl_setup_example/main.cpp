@@ -334,7 +334,8 @@ int main(int argc, const char** argv)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     
-    glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
+    // glClearColor((GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)0.5f, (GLfloat)1.0f);
+    glClearColor((GLfloat)0.2f, (GLfloat)0.2f, (GLfloat)0.2f, (GLfloat)1.0f);
 
     GLuint program;
     if(!InitShader(program, kVertexShaderPath, kFragmentShaderPath)) {
