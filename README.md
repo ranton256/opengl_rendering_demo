@@ -115,4 +115,5 @@ If you get an "already signed" error then add "-f" flag in front of the library 
 
 
 - The rocky.png texture is from https://opengameart.org/content/seamless-2
+- The fuzzy.png texture was created using https://texture-generator.com/generator/demo/
 
