@@ -26,6 +26,7 @@
 #include "sphere.h"
 #include "pyramid.h"
 #include "mathutil.h"
+#include "trianglemesh.h"
 
 const char* kVertexShaderPath = "phong_vertex_shader.glsl";
 const char* kFragmentShaderPath = "phong_fragment_shader.glsl";
@@ -34,8 +35,8 @@ const RGBColor red = {255, 0, 0};
 const RGBColor blue = {0, 0, 255};
 const RGBColor green = {0, 255, 0};
 const RGBColor white = {255, 255, 255};
+const RGBColor black = { 0, 0, 0};
 const RGBColor orange = {232, 99, 10};
-
 
 static bool RunTests(void)
 {
@@ -180,6 +181,100 @@ static void MakeTriangle(ModelObject& triObj)
     triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
 }
 
+static void AutoMapUV(TriangleMesh &mesh, ModelObject &obj) {
+    double minX = mesh.GetVertices().front().x;
+    double minY = mesh.GetVertices().front().y;
+    double minZ = mesh.GetVertices().front().z;
+    double maxX = minX;
+    double maxY = minY;
+    double maxZ = minZ;
+    
+    // find min/max of model in each direction.
+    for(auto vtx : mesh.GetVertices()) {
+        if(vtx.x < minX)
+            minX = vtx.x;
+        if(vtx.y < minY)
+            minY = vtx.y;
+        if(vtx.z < minZ)
+            minZ = vtx.z;
+        
+        if(vtx.x > maxX)
+            maxX = vtx.x;
+        if(vtx.y > maxY)
+            maxY = vtx.y;
+        if(vtx.z > maxZ)
+            maxZ = vtx.z;
+    }
+    
+    constexpr double kMinRange = 0.00001;
+    double rangeX = TMax(maxX - minX, kMinRange);
+    double rangeY = TMax(maxY - minY, kMinRange);
+    double rangeZ = TMax(maxZ - minZ, kMinRange);
+    
+    int uIdx, vIdx;
+    // ignore the one with the smallest range.
+    if(rangeX <= rangeY && rangeX <= rangeZ) {
+        // discard X
+        uIdx = 1;
+        vIdx = 2;
+    } else if(rangeY <= rangeX && rangeY <= rangeZ) {
+        // discard Y
+        uIdx = 0;
+        vIdx = 2;
+    } else {
+        // discard Z
+        uIdx = 0;
+        vIdx = 1;
+    }
+    
+    for(auto vtx : mesh.GetVertices()) {
+        float uvw[3];
+        uvw[0] = (vtx.x - minX) / rangeX;
+        uvw[1] = (vtx.y - minY) / rangeY;
+        uvw[2] = (vtx.z - minZ) / rangeZ;
+        
+        float u = uvw[uIdx];
+        float v = uvw[vIdx];
+        
+        obj.texCoords.push_back(u);
+        obj.texCoords.push_back(v);
+    }
+}
+
+static void MakeMeshObject(TriangleMesh& mesh, ModelObject& obj)
+{
+    obj.vertexData.clear();
+    obj.normals.clear();
+    obj.vertexIndexes.clear();
+    
+    for(auto v : mesh.GetVertices()) {
+        obj.vertexData.push_back(v.x);
+        obj.vertexData.push_back(v.y);
+        obj.vertexData.push_back(v.z);
+    }
+    
+    for(auto n : mesh.GetVertexNormals()) {
+        obj.normals.push_back(n.x);
+        obj.normals.push_back(n.y);
+        obj.normals.push_back(n.z);
+    }
+    
+    for(auto t : mesh.GetTriangles()) {
+        obj.vertexIndexes.push_back(t.vertex[0]);
+        obj.vertexIndexes.push_back(t.vertex[1]);
+        obj.vertexIndexes.push_back(t.vertex[2]);
+    }
+    obj.isIndexed = true;
+    
+    
+    // triObj.texCoords.assign(triTexCoords, triTexCoords + sizeof(triTexCoords)/sizeof(float));
+    
+    // TODO split all this out
+    
+    AutoMapUV(mesh, obj);
+    
+}
+
 int main(int argc, const char** argv)
 {
     if(!RunTests()) {
@@ -304,10 +399,17 @@ int main(int argc, const char** argv)
     
     //  Textures
     std::cout  << "Generating checkers" << std::endl;
-    RGBImageBuffer* checkersTextureImage = GenerateCheckers(1024, 32, blue, green);
-    assert(checkersTextureImage);
-    GLuint checkersTextureID = CreateTextureFromImage(checkersTextureImage);
+    RGBImageBuffer* blueGreenCheckersImage = GenerateCheckers(1024, 32, blue, green);
+    assert(blueGreenCheckersImage);
+    GLuint blueGreenCheckersTextureID = CreateTextureFromImage(blueGreenCheckersImage);
 
+    RGBImageBuffer* redBlackCheckersImage = GenerateCheckers(1024, 64, red, black);
+    assert(redBlackCheckersImage);
+    GLuint redBlackCheckersTextureID = CreateTextureFromImage(redBlackCheckersImage);
+
+    
+    
+    
     std::cout  << "Generating marble" << std::endl;
     RGBImageBuffer* marbleImage = GenerateMarble(512, blue, white);
     assert(marbleImage);
@@ -321,6 +423,11 @@ int main(int argc, const char** argv)
     RGBImageBuffer *marsTextureImage = LoadImageBufferFromPNG("textures/mars.png");
     assert(marsTextureImage);
     GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
+
+    RGBImageBuffer *fuzzyTextureImage = LoadImageBufferFromPNG("textures/fuzzy.png");
+    assert(fuzzyTextureImage);
+    GLuint fuzzyTextureID = CreateTextureFromImage(fuzzyTextureImage);
+
     
     std::cout  << "Generating fractal browning motion" << std::endl;
     RGBImageBuffer* fbmImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
@@ -367,7 +474,47 @@ int main(int argc, const char** argv)
     GenerateNormals(pyramidObj.vertexData, pyramidObj.normals);
     BindObjectBuffers(pyramidObj);
 
-    pyramidObj.textureID = checkersTextureID;
+    pyramidObj.textureID = blueGreenCheckersTextureID;
+    
+    // Triangle mesh loaded from SMF file.
+    TriangleMesh mesh;
+    ModelObject meshObj;
+    const char* meshPath = "mesh/bound-bunny_200.smf";
+    if(!mesh.LoadFromSMF(meshPath)) {
+        std::cerr << "Error loading mesh from " << meshPath << std::endl;
+        
+    } else {
+        
+        mesh.CalcNormals();
+        
+       
+        MakeMeshObject(mesh, meshObj);
+        
+        BindObjectBuffers(meshObj);
+        
+        // todo: use a better texture.
+        meshObj.textureID = redBlackCheckersTextureID;
+    }
+    
+    // Second mesh
+    TriangleMesh meshTwo;
+    ModelObject meshTwoObj;
+    const char* meshTwoPath = "mesh/teddy.smf";
+    if(!meshTwo.LoadFromSMF(meshTwoPath)) {
+        std::cerr << "Error loading mesh from " << meshPath << std::endl;
+        
+    } else {
+        
+        meshTwo.CalcNormals();
+        
+        MakeMeshObject(meshTwo, meshTwoObj);
+        
+        BindObjectBuffers(meshTwoObj);
+        
+        // todo: use a better texture.
+        meshTwoObj.textureID = fuzzyTextureID;
+    }
+    
     
     auto lightPosition = glm::vec3 {-5, 5, 0};
 
@@ -376,10 +523,13 @@ int main(int argc, const char** argv)
     float cubeAngle = 0.0f;
     float sphereAngle = 0.0f;
     float pyramidAngle = 0.0f;
+    float meshAngle = 0.0f;
+    
     const float kTriRotSpeed = 0.02;
     const float kCubeRotSpeed = 0.03;
     const float kSphereRotSpeed = 0.01;
     const float kPyramidRotSpeed = 0.025;
+    const float kMeshRotSpeed = 0.025;
     
     std::cout  << "starting main loop" << std::endl;
     
@@ -473,6 +623,36 @@ int main(int argc, const char** argv)
                 pyramidAngle += kPyramidRotSpeed;
         }
         
+        if(1) {
+            // mesh 1
+            
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(-2, -2, -5));
+            
+            Model  = glm::scale(Model, glm::vec3(1.5, 1.5, 1.8));
+            Model = glm::rotate(Model, meshAngle, glm::vec3(0, 1, 0));
+            
+            meshObj.mMat = Model;
+            DrawObject(meshObj, View, mUniformLocation, normMatUniformLocation);
+
+            if(rotating)
+                meshAngle += kMeshRotSpeed;
+        }
+        
+        if(1) {
+            // mesh 2
+            
+            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(2, -2, -5));
+            
+            Model  = glm::scale(Model, glm::vec3(0.05, 0.05, 0.05));
+            Model = glm::rotate(Model, meshAngle, glm::vec3(1, 0, 0));
+            
+            meshTwoObj.mMat = Model;
+            DrawObject(meshTwoObj, View, mUniformLocation, normMatUniformLocation);
+
+//            if(rotating)
+//                meshAngle += kMeshRotSpeed;
+        }
+        
         glDisableVertexAttribArray(0);
         
         
@@ -492,8 +672,14 @@ int main(int argc, const char** argv)
     if(marsTextureImage) {
         delete marsTextureImage;
     }
-    if(checkersTextureImage) {
-        delete checkersTextureImage;
+    if(fuzzyTextureImage) {
+        delete fuzzyTextureImage;
+    }
+    if(blueGreenCheckersImage) {
+        delete blueGreenCheckersImage;
+    }
+    if(redBlackCheckersImage) {
+        delete redBlackCheckersImage;
     }
     
     // TODO: actually cleanup gl stuff properly
