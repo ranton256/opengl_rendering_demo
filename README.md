@@ -2,50 +2,86 @@
 
 ## Overview
 
-These instructions and sample code are for setting up OpenGL on a MacOS as of MacOS Monterey and 2022.
+These instructions and sample code are for setting up OpenGL on Mac in Xcode as of MacOS Monterey and 2022.
 
-They use glew and glfw3 and also glm.
+They use glew and glfw3 and also glm. And libpng for loading textures.
+
+## Dependencies
+
+- glfw3
+- glew
+- glm
+- libpng
 
 ## Setup Instructions
 
+### Install Homebrew
 Install [Homebrew](https://brew.sh/) if you don't have it already.
 There are different versions and paths they use for Intel binaries and Apple Silicon binaries.
+
+For Apple silicon homebrew, it is typically underneath /opt/homebrew. For Intel it is under /usr/local.
+
+
 These release notes at https://brew.sh/2021/02/05/homebrew-3.0.0/ describe how/why for the two paths.
 
-    brew install glfw3
-    brew install glew
+### Install Libraries
+
+Install glfw3
+
+    /opt/homebrew/bin/brew install glfw3
+    
+And install glew
+
+    /opt/homebrew/bin/brew install glew
 
 And also glm 
 
     /opt/homebrew/bin/brew install glm
 
+And libpng
 
-Create an xcode cli project, pick C++.
-In build settings: search for paths, header, click +, 
-Then add /usr/local/include or /opt/homebrew/include (or wherever they are)
+    /opt/homebrew/bin/brew install libpng
+
+## Project Setup
+
+Create an Xcode MacOS cli project. Choose C++ for the language.
 
 Add the header search path in Build Settings tab for it to find the binaries.
+
+In build settings: search for paths, header, click +, 
+
+Then add /usr/local/include or /opt/homebrew/include (or wherever they are based on Intel/Apple silicon)
 
 - Intel homebrew: /usr/local/include
 - Apple Silicon Homebrew: /opt/homebrew/Cellar
 
+
 Add the binaries you need to link with.
-To do this, go to project settings, select your target, then
-Click "Build  Phases" tab, and expand "Link Binary with Libraries"
-Click +
+To do this, 
 
-Add openGl framework (built in)
+1. Go to project settings, 
+2. Select your target
+3. Then click "Build  Phases" tab, 
+4. and expand "Link Binary with Libraries"
+5. Click +
 
-Then click + again
-Select "Add Other..." 
-Then select "Add files..." from the drop down.
-Hit Command + shift + G
-Type the path i.e. /usr/local/lib
-Go into the glew and glfw and glm directories 
+Search for and add the OpenGL framework which comes with Xcode.
 
-Add the libraries files
-The files will be named something like /opt/homebrew/Cellar/glfw/<version>/something.dylib
-Pick the .dylib files that do not show as an alias. There should be one each for each package version.
+1. Then click + again
+2. Select "Add Other..." 
+3. Then select "Add files..." from the drop down.
+4. Hit Command + shift + G
+5. Type the path for your homebrew libraries: /opt/homebrew/Cellar for Apple silicon
+6. Go into the direcotory named for the specific binary(i.e. glm)
+7. Go into the version subdirectory, /opt/homebrew/Cellar/libpng/1.6.39
+8. Go into the "lib" subdirectory within that version.
+9. Find and choose the .dylib files that does NOT show as an alias.
+
+For example, one of the files on my system is named /opt/homebrew/Cellar/glfw/3.3.8/lib/libglfw.3.3.dylib.
+
+Repeat the above steps for glew, glfw, glm, and libpng libraries.
+
+## Code Signing
 
 If you get a bunch of warnings about signing and team mapping ID when you try to launch
 you will have to sort out the code signing settings.
@@ -68,16 +104,10 @@ Then sign it with your identity like this:
 
 If you get an "already signed" error then add "-f" flag in front of the library path and re-run.
 
-## libpng
-
-install libpng, link statically with the libpng.a file
-
-install via homebrew as with others
-
 
 
 ## Credits
 
 
-- The example texture's I got are from https://opengameart.org/content/seamless-2
+- The rocky.png texture is from https://opengameart.org/content/seamless-2
 

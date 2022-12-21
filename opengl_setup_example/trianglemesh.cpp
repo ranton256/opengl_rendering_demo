@@ -186,7 +186,7 @@ bool TriangleMesh::IntersectTriangle(const Ray& r, double& outT, double& outBeta
 
 bool TriangleMesh::Hit(const Ray& r, HitInfo& outHit) const
 {
-	double minT = 0.0, minTBeta, minTGamma;
+	double minT = 0, minTBeta = 0, minTGamma = 0;
 	
 	int bestIndex = -1;
 	for (int index = 0; index < (int)mTriangles.size(); index++) {
