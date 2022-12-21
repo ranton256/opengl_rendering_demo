@@ -165,41 +165,57 @@ int main(int argc, const char** argv)
 
     
     //  Textures
+    std::list<std::unique_ptr<RGBImageBuffer>> imageBuffers;
+    std::vector<GLuint> textureIDs;
+    
     std::cout  << "Generating checkers" << std::endl;
     RGBImageBuffer* blueGreenCheckersImage = GenerateCheckers(1024, 32, blue, green);
     assert(blueGreenCheckersImage);
     GLuint blueGreenCheckersTextureID = CreateTextureFromImage(blueGreenCheckersImage);
-
+    textureIDs.push_back(blueGreenCheckersTextureID);
+    
     RGBImageBuffer* redBlackCheckersImage = GenerateCheckers(1024, 64, red, black);
     assert(redBlackCheckersImage);
     GLuint redBlackCheckersTextureID = CreateTextureFromImage(redBlackCheckersImage);
-
-    
-    
+    textureIDs.push_back(redBlackCheckersTextureID);
     
     std::cout  << "Generating marble" << std::endl;
     RGBImageBuffer* marbleImage = GenerateMarble(512, blue, white);
     assert(marbleImage);
     GLuint marbleTextureID = CreateTextureFromImage(marbleImage);
+    textureIDs.push_back(marbleTextureID);
     
     std::cout << "Loading image textures" << std::endl;
     RGBImageBuffer *rockyTextureImage = LoadImageBufferFromPNG("textures/rocky.png");
     assert(rockyTextureImage);
     GLuint rockyTextureImageID = CreateTextureFromImage(rockyTextureImage);
+    textureIDs.push_back(rockyTextureImageID);
     
     RGBImageBuffer *marsTextureImage = LoadImageBufferFromPNG("textures/mars.png");
     assert(marsTextureImage);
     GLuint marsTextureImageID = CreateTextureFromImage(marsTextureImage);
-
+    textureIDs.push_back(marsTextureImageID);
+    
     RGBImageBuffer *fuzzyTextureImage = LoadImageBufferFromPNG("textures/fuzzy.png");
     assert(fuzzyTextureImage);
     GLuint fuzzyTextureID = CreateTextureFromImage(fuzzyTextureImage);
-
+    textureIDs.push_back(fuzzyTextureID);
     
     std::cout  << "Generating fractal browning motion" << std::endl;
     RGBImageBuffer* fbmImage = GenerateFractalBrownianMotion(256 /*512*/, orange, 0.8, 1.8, 3.0, -0.5, 0.5, 64, false);
     assert(fbmImage);
     GLuint fbmTextureID = CreateTextureFromImage(fbmImage);
+    textureIDs.push_back(fbmTextureID);
+    
+    // Add these all to list of unique ptrs for automatic cleanup.
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(blueGreenCheckersImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(redBlackCheckersImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(marbleImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(rockyTextureImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(marsTextureImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(fuzzyTextureImage));
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(fbmImage));
+    
     
     
     // Shapes
@@ -443,31 +459,15 @@ int main(int argc, const char** argv)
     
     std::cout  << "cleaning up" << std::endl;
     
-    if(fbmImage) {
-        delete fbmImage;
-    }
-    if(marbleImage) {
-        delete marbleImage;
-    }
-    if(marsTextureImage) {
-        delete marsTextureImage;
-    }
-    if(fuzzyTextureImage) {
-        delete fuzzyTextureImage;
-    }
-    if(blueGreenCheckersImage) {
-        delete blueGreenCheckersImage;
-    }
-    if(redBlackCheckersImage) {
-        delete redBlackCheckersImage;
-    }
-    
+
     //  Cleanup GL stuff
     
     glDeleteProgram(program);
-    // TODO: for  every texture
-    // glDeleteTextures(1, &TextureID);
     
+    for(auto textureID: textureIDs) {
+        glDeleteTextures(1, &textureID);
+    }
+        
     glDeleteVertexArrays(1, &VertexArrayID);
     
     for(const auto& modelObj : objects) {
