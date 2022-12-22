@@ -7,8 +7,9 @@
 
 #include "model_object.h"
 #include "textures.h"
+#include "frame_state.h"
 
-void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation)
+void DrawObject( FrameState* frameState, ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation)
 {
     if(obj.isVisible == false) {
         return;
@@ -21,6 +22,16 @@ void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation
     glm::mat4 normMat = glm::transpose(glm::inverse(mv));
     
     glUniformMatrix4fv(normMatUniformLocation, 1, GL_FALSE, glm::value_ptr(normMat));
+    
+    // Set material properties.
+    glUniform3f(frameState->materialAmbientID,
+                obj.material.ambient.r, obj.material.ambient.g, obj.material.ambient.b);
+    glUniform3f(frameState->materialDiffuseID,
+                obj.material.diffuse.r, obj.material.diffuse.g, obj.material.diffuse.b);
+    glUniform3f(frameState->materialSpecularID,
+                obj.material.specular.r, obj.material.specular.g, obj.material.specular.b);
+    glUniform1f(frameState->materialSpecExpID, obj.material.specExp);
+    
     
     glBindBuffer(GL_ARRAY_BUFFER, obj.vertexBuffer);
     glVertexAttribPointer(
@@ -49,6 +60,8 @@ void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation
         glBindBuffer(GL_ARRAY_BUFFER, obj.normalBuffer);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     }
+    
+    
     
     if(obj.isIndexed) {
         if(obj.vertexIndexes.empty()) {

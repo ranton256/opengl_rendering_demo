@@ -11,27 +11,17 @@ in vec3 halfVector;
 
 uniform sampler2D myTextureSampler;
 
-// diffuse color comes from the
-// uniform vec3 materialAmbient;
-// uniform vec3 materialSpecular
-// uniform float materialSpecExp;
+uniform vec3 materialAmbient;
+uniform vec3 materialDiffuse;
+uniform vec3 materialSpecular;
+uniform float materialSpecExp;
 
-//uniform vec3 globalAmbient;
-//uniform vec3 lightDiffuse;
-//uniform vec3 lightSpecular
+uniform vec3 globalAmbient;
+uniform vec3 lightDiffuse;
+uniform vec3 lightSpecular;
 
 void main()
 {
-    // TODO: use uniforms for these.
-    vec3 materialAmbient = vec3(0.1, 0.08, 0.11);
-    vec3 materialDiffuse = vec3(0.8, 0.8, 0.8);
-    vec3 materialSpecular = vec3(1,1,1);
-    float materialSpecExp = 10;
-
-    vec3 globalAmbient = vec3(1,1,1);
-    vec3 lightDiffuse = vec3(1,1,1);
-    vec3 lightSpecular = vec3(1,1,1);
-
     vec3 L = normalize(esLightDirection);
     vec3 N = normalize(esNormal);
     vec3 V = normalize(-esVertexPosition);

@@ -21,6 +21,32 @@
 
 #include "trianglemesh.h"
 
+
+struct Material {
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float specExp;
+    
+    // TODO: move texture ID here.
+    
+    Material() {
+        ambient  = {0.1, 0.1, 0.1};
+        diffuse = {0.1, 0.1, 0.8};
+        specular = {1, 1, 1};
+        specExp = 10.0;
+    }
+    
+    Material(glm::vec3 amb, glm::vec3 diff, glm::vec3 spec, float spExp) {
+        ambient = amb;
+        diffuse = diff;
+        specular = spec;
+        specExp = spExp;
+    }
+};
+
+struct FrameState;
+
 class ModelObject {
     
 public:
@@ -33,7 +59,7 @@ public:
     bool isVisible;
     GLuint vertexBuffer, uvBuffer, indexBuffer, normalBuffer;
     GLuint textureID;
-    
+    Material material;
     
     ModelObject() {
         isIndexed = false;
@@ -58,7 +84,7 @@ public:
 };
 
 
-void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation);
+void DrawObject( FrameState* frameState, ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation);
 
 void BindObjectBuffers(ModelObject &obj);
 

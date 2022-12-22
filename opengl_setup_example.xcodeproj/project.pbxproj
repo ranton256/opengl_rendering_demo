@@ -77,6 +77,7 @@
 		5640D5762953609A00745D29 /* textures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = textures.h; sourceTree = "<group>"; };
 		5640D5782953639E00745D29 /* model_object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = model_object.cpp; sourceTree = "<group>"; };
 		5640D5792953639E00745D29 /* model_object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = model_object.h; sourceTree = "<group>"; };
+		5643D4D12954BC6F0064F79E /* frame_state.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = frame_state.h; path = opengl_setup_example/frame_state.h; sourceTree = "<group>"; };
 		56664FAB294F730100F138EA /* image_buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image_buffer.cpp; sourceTree = "<group>"; };
 		56664FAC294F730100F138EA /* image_buffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = image_buffer.h; sourceTree = "<group>"; };
 		56664FAE294F906900F138EA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.markdown; };
@@ -143,6 +144,7 @@
 		56BBA5882947C0F5005F8915 = {
 			isa = PBXGroup;
 			children = (
+				5643D4D12954BC6F0064F79E /* frame_state.h */,
 				56664FC6294FC00300F138EA /* textures */,
 				56664FAE294F906900F138EA /* README.md */,
 				56E9334629499DA5002A3B33 /* shaders */,

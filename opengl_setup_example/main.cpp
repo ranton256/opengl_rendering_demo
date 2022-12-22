@@ -18,6 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include "frame_state.h"
 #include "model_object.h"
 #include "shaders.h"
 #include "textures.h"
@@ -45,23 +46,6 @@ static bool RunTests(void)
     return good;
 }
 
-struct FrameState {
-    GLFWwindow *window;
-    
-    GLint aPositionLocation;
-    GLint mUniformLocation;
-    GLint vUniformLocation;
-    GLint normMatUniformLocation;
-    GLint projUniformLocation;
-    GLint lightPositionID;
-    
-    GLuint VertexArrayID;
-   
-    glm::vec3 lightPosition;
-    glm::vec3 eyePosition;
-    glm::mat4 viewMatrix;
-    glm::mat4 projMatrix;
-};
 
 static GLint FindUniformLocation(GLint program, const char* name)
 {
@@ -163,6 +147,15 @@ int main(int argc, const char** argv)
     frameState->lightPositionID = FindUniformLocation(program, "lightPosition");
     
     
+    frameState->materialAmbientID = FindUniformLocation(program, "materialAmbient");
+    frameState->materialDiffuseID = FindUniformLocation(program, "materialDiffuse");
+    frameState->materialSpecularID = FindUniformLocation(program, "materialSpecular");
+    frameState->materialSpecExpID = FindUniformLocation(program, "materialSpecExp");
+
+    frameState->globalAmbientID = FindUniformLocation(program, "globalAmbient");
+    frameState->lightDiffuseID = FindUniformLocation(program, "lightDiffuse");
+    frameState->lightSpecularID  = FindUniformLocation(program, "lightSpecular");
+    
     frameState->aPositionLocation = glGetAttribLocation(program, "a_position");
     if (frameState->aPositionLocation  == -1) {
         std::cerr << "Could not bind a_position attribute" << std::endl;
@@ -226,7 +219,13 @@ int main(int argc, const char** argv)
     imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(fuzzyTextureImage));
     imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(fbmImage));
     
+    // Lighting
+    frameState->globalAmbient = glm::vec3(1,1,1);
+    frameState->lightDiffuse = glm::vec3(1,1,1);
+    frameState->lightSpecular = glm::vec3(1,1,1);
     
+    // TODO: setup materials for each shape
+    Material plainWhiteMaterial = Material(glm::vec3(0.1, 0.1, 0.1), glm::vec3(1,1,1), glm::vec3(1,1,1), 15);
     
     // Shapes
     std::list<std::unique_ptr<ModelObject>> objects;
@@ -239,6 +238,7 @@ int main(int argc, const char** argv)
         BindObjectBuffers(*triObjPtr);
         
         triObjPtr->textureID = marbleTextureID;
+        triObjPtr->material = plainWhiteMaterial;
     }
     
     // CUBE
@@ -251,6 +251,7 @@ int main(int argc, const char** argv)
         BindObjectBuffers(*cubeObjPtr);
         
         cubeObjPtr->textureID = fbmTextureID;
+        cubeObjPtr->material = plainWhiteMaterial;
     }
     
     // CUBE TWO
@@ -262,6 +263,7 @@ int main(int argc, const char** argv)
         BindObjectBuffers(*cubeTwoObjPtr);
         
         cubeTwoObjPtr->textureID = rockyTextureImageID;
+        cubeTwoObjPtr->material = plainWhiteMaterial;
     }
         
     // SPHERE
@@ -274,6 +276,7 @@ int main(int argc, const char** argv)
         sphereObjPtr->isIndexed = true;
         
         sphereObjPtr->textureID = marsTextureImageID;
+        sphereObjPtr->material = plainWhiteMaterial;
     }
     
     // Pyramid
@@ -285,6 +288,7 @@ int main(int argc, const char** argv)
         BindObjectBuffers(*pyramidObjPtr);
         
         pyramidObjPtr->textureID = blueGreenCheckersTextureID;
+        pyramidObjPtr->material = plainWhiteMaterial;
     }
     
     // Triangle mesh loaded from SMF file.
@@ -305,6 +309,7 @@ int main(int argc, const char** argv)
             
             // todo: use a better texture.
             meshObjPtr->textureID = redBlackCheckersTextureID;
+            meshObjPtr->material = plainWhiteMaterial;
         }
     }
     
@@ -328,6 +333,7 @@ int main(int argc, const char** argv)
             
             // todo: use a better texture.
             meshTwoObjPtr->textureID = fuzzyTextureID;
+            meshTwoObjPtr->material = plainWhiteMaterial;
         }
     }
     
@@ -404,6 +410,15 @@ int main(int argc, const char** argv)
             glUniform3f(frameState->lightPositionID,
                         frameState->lightPosition.x, frameState->lightPosition.y, frameState->lightPosition.z);
 
+
+            glUniform3f(frameState->globalAmbientID,
+                        frameState->globalAmbient.r, frameState->globalAmbient.g, frameState->globalAmbient.b);
+            glUniform3f(frameState->lightDiffuseID,
+                        frameState->lightDiffuse.r, frameState->lightDiffuse.g, frameState->lightDiffuse.b);
+            glUniform3f(frameState->lightSpecularID,
+                        frameState->lightSpecular.r, frameState->lightSpecular.g, frameState->lightSpecular.b);
+            
+            
             if (glfwGetKey( frameState->window, GLFW_KEY_SPACE ) == GLFW_PRESS) {
                 rotating = false;
             } else {
@@ -431,7 +446,7 @@ int main(int argc, const char** argv)
             }
             
             for(auto& modelObj : objects) {
-                DrawObject(*modelObj, frameState->viewMatrix, frameState->mUniformLocation, frameState->normMatUniformLocation);
+                DrawObject(frameState.get(), *modelObj, frameState->viewMatrix, frameState->mUniformLocation, frameState->normMatUniformLocation);
             }
                  
             for(auto& modelObj : objects) {
