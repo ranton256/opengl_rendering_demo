@@ -45,6 +45,32 @@ static bool RunTests(void)
     return good;
 }
 
+struct FrameState {
+    GLFWwindow *window;
+    
+    GLint aPositionLocation;
+    GLint mUniformLocation;
+    GLint vUniformLocation;
+    GLint normMatUniformLocation;
+    GLint projUniformLocation;
+    GLint lightPositionID;
+    
+    GLuint VertexArrayID;
+   
+    glm::vec3 lightPosition;
+    glm::vec3 eyePosition;
+    glm::mat4 viewMatrix;
+    glm::mat4 projMatrix;
+};
+
+static GLint FindUniformLocation(GLint program, const char* name)
+{
+    GLint locID = glGetUniformLocation(program, name);
+    if (locID == -1) {
+        std::cerr << "Could not bind " << name << " location" << std::endl;
+    }
+    return locID;
+}
 
 int main(int argc, const char** argv)
 {
@@ -72,20 +98,22 @@ int main(int argc, const char** argv)
     // Disallow resizing.
     glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE);
     
-    GLFWwindow *window = glfwCreateWindow(kWindowWidth, kWindowHeight, "OpenGL Setup Example", nullptr, nullptr);
+    std::unique_ptr<FrameState> frameState(new FrameState());
+    
+    frameState->window = glfwCreateWindow(kWindowWidth, kWindowHeight, "OpenGL Setup Example", nullptr, nullptr);
     
     // may differ than expected due to Retina display
     int screenWidth, screenHeight;
-    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    glfwGetFramebufferSize(frameState->window, &screenWidth, &screenHeight);
     
-    if( window == nullptr ) {
+    if( frameState->window == nullptr ) {
         std::cerr << "Failed creating window with GLFW" << std::endl;
         getchar(); // wait on keypress
         glfwTerminate();
         return 1;
     }
     
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(frameState->window);
     
     glewExperimental = true; // Needed for core profile
     if (glewInit() != GLEW_OK) {
@@ -96,7 +124,7 @@ int main(int argc, const char** argv)
     }
 
     // Ensure we can capture the escape key being pressed below
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(frameState->window, GLFW_STICKY_KEYS, GL_TRUE);
 
     glCullFace( GL_BACK );
     glFrontFace( GL_CCW );
@@ -119,49 +147,29 @@ int main(int argc, const char** argv)
     const float znear = 0.001f;
     const float zfar = 100.0f;
 
-    glm::mat4 Projection = glm::perspective(glm::radians(fovyInDegrees), aspectRatio, znear, zfar);
+    frameState->projMatrix = glm::perspective(glm::radians(fovyInDegrees), aspectRatio, znear, zfar);
     
-    auto eyePosition = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::mat4 View = glm::lookAt(
-        eyePosition, // position
-        glm::vec3(0.0f, 0.0f, 0.0f), // target
-        glm::vec3(0.0f, 1.0f, 0.0f) //  up vector
-        );
-
+    frameState->eyePosition = glm::vec3(0.0f, 0.0f, 3.0f);
+    frameState->viewMatrix = glm::lookAt(
+                                         frameState->eyePosition, // position
+                                         glm::vec3(0.0f, 0.0f, 0.0f), // target
+                                         glm::vec3(0.0f, 1.0f, 0.0f) //  up vector
+                                         );
     
-    GLint mUniformLocation = glGetUniformLocation(program, "modelMatrix");
-    if (mUniformLocation == -1) {
-        std::cerr << "Could not bind modelMatrix  location" << std::endl;
+    frameState->mUniformLocation = FindUniformLocation(program, "modelMatrix");
+    frameState->vUniformLocation = FindUniformLocation(program, "viewMatrix");
+    frameState->normMatUniformLocation = FindUniformLocation(program, "normMatrix");
+    frameState->projUniformLocation = FindUniformLocation(program, "projMatrix");
+    frameState->lightPositionID = FindUniformLocation(program, "lightPosition");
+    
+    
+    frameState->aPositionLocation = glGetAttribLocation(program, "a_position");
+    if (frameState->aPositionLocation  == -1) {
+        std::cerr << "Could not bind a_position attribute" << std::endl;
     }
     
-    GLint vUniformLocation = glGetUniformLocation(program, "viewMatrix");
-    if (vUniformLocation == -1) {
-        std::cerr << "Could not bind viewMatrix  location" << std::endl;
-    }
-    
-    GLint normMatUniformLocation = glGetUniformLocation(program, "normMatrix");
-    if (normMatUniformLocation == -1) {
-        std::cerr << "Could not bind normMatrix location" << std::endl;
-    }
-    
-    GLint projUniformLocation = glGetUniformLocation(program, "projMatrix");
-    if (projUniformLocation == -1) {
-        std::cerr << "Could not bind projUniformLocation" << std::endl;
-    }
-    
-    GLint aPositionLocation = glGetAttribLocation(program, "a_position");
-    if (aPositionLocation == -1) {
-        std::cerr << "Could not bind attribute a_position" << std::endl;
-    }
-    
-    GLint lightPositionID = glGetUniformLocation(program, "lightPosition");
-    if (lightPositionID == -1) {
-        std::cerr << "Could not bind lightPositionID location" << std::endl;
-    }
-    
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
+    glGenVertexArrays(1, &frameState->VertexArrayID);
+    glBindVertexArray(frameState->VertexArrayID);
 
     
     //  Textures
@@ -170,9 +178,12 @@ int main(int argc, const char** argv)
     
     std::cout  << "Generating checkers" << std::endl;
     RGBImageBuffer* blueGreenCheckersImage = GenerateCheckers(1024, 32, blue, green);
+    
     assert(blueGreenCheckersImage);
     GLuint blueGreenCheckersTextureID = CreateTextureFromImage(blueGreenCheckersImage);
     textureIDs.push_back(blueGreenCheckersTextureID);
+    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(blueGreenCheckersImage));
+   
     
     RGBImageBuffer* redBlackCheckersImage = GenerateCheckers(1024, 64, red, black);
     assert(redBlackCheckersImage);
@@ -208,7 +219,6 @@ int main(int argc, const char** argv)
     textureIDs.push_back(fbmTextureID);
     
     // Add these all to list of unique ptrs for automatic cleanup.
-    imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(blueGreenCheckersImage));
     imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(redBlackCheckersImage));
     imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(marbleImage));
     imageBuffers.push_back(std::unique_ptr<RGBImageBuffer>(rockyTextureImage));
@@ -321,7 +331,7 @@ int main(int argc, const char** argv)
         }
     }
     
-    auto lightPosition = glm::vec3 {-5, 5, 0};
+    frameState->lightPosition = glm::vec3 {-5, 5, 0};
 
     // Rotation angles and speeds
     float triAngle = 0.0f;
@@ -340,119 +350,102 @@ int main(int argc, const char** argv)
     
     bool rotating = true;
     
-    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-           glfwWindowShouldClose(window) == 0 ) {
+    glUseProgram(program);
+ 
+    // setup basic model transforms
+    
+    triObjPtr->PushModelMatrix(glm::scale(triObjPtr->ModelMatrix(), glm::vec3(0.6f, 0.5f, 0.5f)));
+    
+    cubeObjPtr->PushModelMatrix(glm::translate(cubeObjPtr->ModelMatrix(), glm::vec3(-2.5, 0, -4)));
+    cubeObjPtr->PushModelMatrix(glm::scale(cubeObjPtr->ModelMatrix(), glm::vec3(0.6f, 0.5f, 0.5f)));
+    
+    cubeTwoObjPtr->PushModelMatrix( glm::translate(cubeTwoObjPtr->ModelMatrix(), glm::vec3(2.5, 0, -4)) );
+    cubeTwoObjPtr->PushModelMatrix( glm::scale(cubeTwoObjPtr->ModelMatrix(), glm::vec3(0.6f, 0.5f, 0.5f)) );
+    
+    sphereObjPtr->PushModelMatrix( glm::translate(sphereObjPtr->ModelMatrix(), glm::vec3(0, 1.0, -4)) );
+    sphereObjPtr->PushModelMatrix( glm::scale(sphereObjPtr->ModelMatrix(), glm::vec3(0.5f, 0.5f, 0.5f)) );
+    sphereObjPtr->PushModelMatrix( glm::rotate(sphereObjPtr->ModelMatrix(), (float)(PI / 2), glm::vec3(1.0, 0, 0)) );
+    
+    pyramidObjPtr->PushModelMatrix( glm::translate(pyramidObjPtr->ModelMatrix(), glm::vec3(0, -2, -4)) );
+    pyramidObjPtr->PushModelMatrix(  glm::rotate(pyramidObjPtr->ModelMatrix(), (float)(PI / 8.0f), glm::vec3(1, 0, 0)) );
+    
+    meshObjPtr->PushModelMatrix( glm::translate(meshObjPtr->ModelMatrix(), glm::vec3(-2, -2, -5)) );
+    meshObjPtr->PushModelMatrix(  glm::scale(meshObjPtr->ModelMatrix(), glm::vec3(1.5, 1.5, 1.8)) );
+    
+    meshTwoObjPtr->PushModelMatrix( glm::translate(meshTwoObjPtr->ModelMatrix(), glm::vec3(2, -2, -5)) );
+    meshTwoObjPtr->PushModelMatrix(  glm::scale(meshTwoObjPtr->ModelMatrix(), glm::vec3(0.05, 0.05, 0.05)) );
+
+    
+    
+    // TODO: you are here working on model matrix push down stack.
+    for(auto& modelObj : objects) {
+        modelObj->Hide();
+    }
+    triObjPtr->Show();
+    cubeObjPtr->Show();
+    cubeTwoObjPtr->Show();
+    sphereObjPtr->Show();
+    pyramidObjPtr->Show();
+    meshObjPtr->Show();
+    meshTwoObjPtr->Show();
+    
+    while( glfwGetKey(frameState->window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+           glfwWindowShouldClose(frameState->window) == 0 ) {
         
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        glUseProgram(program);
-        
-        glEnableVertexAttribArray(aPositionLocation);
-        
-        
-        // NOTE: These don't actually change each time through loop currently.
-        glUniformMatrix4fv(projUniformLocation, 1, GL_FALSE, glm::value_ptr(Projection));
-        glUniformMatrix4fv(vUniformLocation, 1, GL_FALSE, glm::value_ptr(View));
-        
-        
-        glUniform3f(lightPositionID, lightPosition.x, lightPosition.y, lightPosition.z);
-        
-        
-        if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS) {
-            rotating = false;
-        } else {
-            rotating = true;
-        }
-        
-        if (1) { // Triangle
-            glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.6f, 0.5f, 0.5f));
-            model = glm::rotate(model, triAngle, glm::vec3(0, 0.2, 1));
-            triObjPtr->mMat = model;
+        //static void DrawFrame(void)
+        {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
-            if(rotating)
+            glEnableVertexAttribArray(frameState->aPositionLocation);
+            
+            glUniformMatrix4fv(frameState->projUniformLocation, 1, GL_FALSE, glm::value_ptr(frameState->projMatrix));
+            glUniformMatrix4fv(frameState->vUniformLocation, 1, GL_FALSE, glm::value_ptr(frameState->viewMatrix));
+            glUniform3f(frameState->lightPositionID,
+                        frameState->lightPosition.x, frameState->lightPosition.y, frameState->lightPosition.z);
+
+            if (glfwGetKey( frameState->window, GLFW_KEY_SPACE ) == GLFW_PRESS) {
+                rotating = false;
+            } else {
+                rotating = true;
+            }
+
+            triObjPtr->PushModelMatrix(glm::rotate(triObjPtr->ModelMatrix(), triAngle, glm::vec3(0, 0.2, 1)));
+            
+            cubeObjPtr->PushModelMatrix(glm::rotate(cubeObjPtr->ModelMatrix(), cubeAngle, glm::vec3(0.5, 0.0, 0.5)));
+            cubeTwoObjPtr->PushModelMatrix(glm::rotate(cubeTwoObjPtr->ModelMatrix(), cubeAngle, glm::vec3(0.5, 0.0, 0.5)));
+            
+            sphereObjPtr->PushModelMatrix(glm::rotate(sphereObjPtr->ModelMatrix(), sphereAngle, glm::vec3(0.0, 0.1, 1.0)));
+
+            pyramidObjPtr->PushModelMatrix(glm::rotate(pyramidObjPtr->ModelMatrix(), pyramidAngle, glm::vec3(0, 1, 0)));
+            
+            meshObjPtr->PushModelMatrix(glm::rotate(meshObjPtr->ModelMatrix(), meshAngle, glm::vec3(0, 1, 0)) );
+            meshTwoObjPtr->PushModelMatrix(glm::rotate(meshTwoObjPtr->ModelMatrix(), meshAngle, glm::vec3(1, 0, 0)));
+
+            if(rotating) {
                 triAngle += kTriRotSpeed;
-        }
-        
-        for(auto& modelObj : objects) {
-            DrawObject(*modelObj, View, mUniformLocation, normMatUniformLocation);
+                cubeAngle += kCubeRotSpeed;
+                sphereAngle += kSphereRotSpeed;
+                pyramidAngle += kPyramidRotSpeed;
+                meshAngle += kMeshRotSpeed;
+            }
+            
+            for(auto& modelObj : objects) {
+                DrawObject(*modelObj, frameState->viewMatrix, frameState->mUniformLocation, frameState->normMatUniformLocation);
+            }
+                 
+            for(auto& modelObj : objects) {
+                if(modelObj->modelMatrixStack.size() > 1) {
+                    modelObj->PopModelMatrix() ;
+                }
+            }
+
+            glDisableVertexAttribArray(frameState->aPositionLocation);
+            
+            
+            glfwSwapBuffers(frameState->window);
         }
 
-        if(1){ // Cube one
-            
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5, 0, -4));
-            model = glm::scale(model, glm::vec3(0.6f, 0.5f, 0.5f));
-            model = glm::rotate(model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
-            
-            cubeObjPtr->mMat = model;
-            if(rotating)
-                cubeAngle += kCubeRotSpeed;
-        }
-        
-        if(1)
-        { // Cube two
-            
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5, 0, -4));
-            model = glm::scale(model, glm::vec3(0.6f, 0.5f, 0.5f));
-            model = glm::rotate(model, cubeAngle, glm::vec3(0.5, 0.0, 0.5));
-            
-            cubeTwoObjPtr->mMat = model;
-        }
-        
-        if(1)
-        { // Sphere
-            
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 1.0, -4));
-            Model = glm::scale(Model, glm::vec3(0.5f, 0.5f, 0.5f));
-            Model = glm::rotate(Model, (float)(PI / 2), glm::vec3(1.0, 0, 0));
-            Model = glm::rotate(Model, sphereAngle, glm::vec3(0.0, 0.1, 1.0));
-            
-            sphereObjPtr->mMat = Model;
-            
-            if(rotating)
-                sphereAngle += kSphereRotSpeed;
-        }
-        if(1)
-        { // Pyramid
-            
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, -4));
-            Model = glm::rotate(Model, (float)(PI / 8.0f), glm::vec3(1, 0, 0));
-            Model = glm::rotate(Model, pyramidAngle, glm::vec3(0, 1, 0));
-            
-            pyramidObjPtr->mMat = Model;
-            
-            if(rotating)
-                pyramidAngle += kPyramidRotSpeed;
-        }
-        
-        if(1) {
-            // mesh 1
-            
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(-2, -2, -5));
-            
-            Model  = glm::scale(Model, glm::vec3(1.5, 1.5, 1.8));
-            Model = glm::rotate(Model, meshAngle, glm::vec3(0, 1, 0));
-            
-            meshObjPtr->mMat = Model;
-            
-            if(rotating)
-                meshAngle += kMeshRotSpeed;
-        }
-        
-        if(1) {
-            // mesh 2
-            
-            glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(2, -2, -5));
-            
-            Model  = glm::scale(Model, glm::vec3(0.05, 0.05, 0.05));
-            Model = glm::rotate(Model, meshAngle, glm::vec3(1, 0, 0));
-            
-            meshTwoObjPtr->mMat = Model;
-        }
-        
-        glDisableVertexAttribArray(0);
-        
-        
-        glfwSwapBuffers(window);
         glfwPollEvents();
         
     }
@@ -468,7 +461,7 @@ int main(int argc, const char** argv)
         glDeleteTextures(1, &textureID);
     }
         
-    glDeleteVertexArrays(1, &VertexArrayID);
+    glDeleteVertexArrays(1, &frameState->VertexArrayID);
     
     for(const auto& modelObj : objects) {
         glDeleteBuffers(1, &modelObj->vertexBuffer);

@@ -9,7 +9,7 @@
 #define model_object_hpp
 
 #include <vector>
-
+#include <stack>
 
 // Define before OpenGL and GLUT includes to avoid deprecation messages
 #define GL_SILENCE_DEPRECATION
@@ -28,14 +28,33 @@ public:
     std::vector<float> texCoords;
     std::vector<int> vertexIndexes;
     std::vector<float> normals;
-    glm::mat4 mMat;
+    std::stack<glm::mat4> modelMatrixStack;
     bool isIndexed;
+    bool isVisible;
     GLuint vertexBuffer, uvBuffer, indexBuffer, normalBuffer;
     GLuint textureID;
     
-    ModelObject() = default;
+    
+    ModelObject() {
+        isIndexed = false;
+        textureID = -1;
+        vertexBuffer = uvBuffer  = indexBuffer = normalBuffer = -1;
+        modelMatrixStack.push(glm::identity<glm::mat4>());
+    };
+    
     ModelObject(const ModelObject& obj) = default;
     ~ModelObject() = default;
+    
+    void PushModelMatrix(const glm::mat4 mat) { modelMatrixStack.push(mat); }
+    
+    void PopModelMatrix(void) { modelMatrixStack.pop(); }
+    
+    const bool Visible(void) const { return isVisible; }
+    
+    void Hide(void) { isVisible = false; }
+    void Show(void) { isVisible = true; }
+    
+    glm::mat4& ModelMatrix(void) { return modelMatrixStack.top(); }
 };
 
 

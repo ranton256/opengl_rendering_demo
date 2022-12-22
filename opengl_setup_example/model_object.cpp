@@ -10,9 +10,14 @@
 
 void DrawObject( ModelObject& obj, glm::mat4 viewMat, GLuint mMatUniformLocation, GLuint normMatUniformLocation)
 {
-    glUniformMatrix4fv(mMatUniformLocation, 1, GL_FALSE, glm::value_ptr(obj.mMat));
+    if(obj.isVisible == false) {
+        return;
+    }
+    glm::mat4& modelMat = obj.ModelMatrix();
     
-    auto mv = viewMat * obj.mMat;
+    glUniformMatrix4fv(mMatUniformLocation, 1, GL_FALSE, glm::value_ptr(modelMat));
+    
+    auto mv = viewMat * modelMat;
     glm::mat4 normMat = glm::transpose(glm::inverse(mv));
     
     glUniformMatrix4fv(normMatUniformLocation, 1, GL_FALSE, glm::value_ptr(normMat));
