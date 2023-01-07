@@ -1,4 +1,4 @@
-#  OpenGL Setup Example
+#  OpenGL Rendering Demo
 
 ## Overview
 
