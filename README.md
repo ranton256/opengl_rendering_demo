@@ -49,16 +49,24 @@ And libpng
 
 ## Project Setup
 
+These instructions were based on Xcode Version 14.2.
+
 Create an Xcode MacOS cli project. Choose C++ for the language.
 
 Add the header search path in Build Settings tab for it to find the binaries.
 
-In build settings: search for paths, header, click +, 
+Click the project at the top of the navigation pane on the left.
+Choose the Build Settings tab.
+Choose the project under the PROJECT heading.
+Use the Filter text input box at the top right to search for "paths".
+Find the ""Header Search Paths" setting in the "Search Paths" section.
+Double click the text value area to the right of "Header Search Paths".
+Click the + (plus) icon inside the popup to enter a new path.
 
-Then add /usr/local/include or /opt/homebrew/include (or wherever they are based on Intel/Apple silicon)
+Then add the paths /usr/local/include or /opt/homebrew/include or wherever they are based on Intel or Apple Silicon machine and homebrew install.
 
 - Intel homebrew: /usr/local/include
-- Apple Silicon Homebrew: /opt/homebrew/Cellar
+- Apple Silicon Homebrew: /opt/homebrew/include
 
 
 Add the binaries you need to link with.
@@ -67,7 +75,7 @@ To do this,
 1. Go to project settings, 
 2. Select your target
 3. Then click "Build  Phases" tab, 
-4. and expand "Link Binary with Libraries"
+4. Expand "Link Binary with Libraries"
 5. Click +
 
 Search for and add the OpenGL framework which comes with Xcode.
@@ -84,7 +92,8 @@ Search for and add the OpenGL framework which comes with Xcode.
 
 For example, one of the files on my system is named /opt/homebrew/Cellar/glfw/3.3.8/lib/libglfw.3.3.dylib.
 
-Repeat the above steps for glew, glfw, glm, and libpng libraries.
+Repeat the above steps for glew, glfw, and libpng libraries.
+The glm library is header only, so doesn't need this step.
 
 ## Code Signing
 
@@ -109,7 +118,15 @@ Then sign it with your identity like this:
 
 If you get an "already signed" error then add "-f" flag in front of the library path and re-run.
 
+## Working directory
 
+In order to load the shader files using relative paths successfully you need to set the working directory in Xcode for running the program.
+
+From the menu bar pick Product, then Scheme, then Edit Scheme.
+Click the "Use custom working directory" checkbox.
+Select the directory with your source code, which contains the "shaders/" subdirectory.
+
+You can just enter the value "${SRCROOT}" here which should do the trick.
 
 ## Credits
 
